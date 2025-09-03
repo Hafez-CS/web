@@ -25,7 +25,6 @@ const queryclinet = new QueryClient()
           <Route index path="/assistant" element={<Profile />} />
           <Route index path="/setting" element={<Profile />} />
         </Route>
-        {/* </Route> */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
       </Routes>

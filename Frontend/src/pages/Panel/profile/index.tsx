@@ -4,11 +4,16 @@
 // import { MenuItems } from "./@types";
 
 
+
+
 import { useQuery } from "@tanstack/react-query";
 import { ProfileItems } from "./@types";
 import { profileAPI } from "../../../services/profile/profile.service";
 
 export default function Profile() {
+
+  
+
   const {data : getProfileInfo} = useQuery({
     queryKey : ["ProfileInfo"],
     queryFn : profileAPI.getProfileInfo
