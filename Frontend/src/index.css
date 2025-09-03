@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@font-face {
+    font-family: 'Vazir';
+    font-style: normal;
+    src: url("/fonts/Vazirmatn-Regular.ttf") format("truetype");
+}
+@theme {
+    --color-primary : #284b63;
+    --color-secondry : #3c6e71;
+    --color-blackColor : #353535;
+    --color-GrayColor : #d9d9d9
+}
+* {
+    font-family:  'Vazir';
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
