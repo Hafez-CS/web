@@ -1,8 +1,15 @@
+
 export interface IMenu {
     id : number
     name : string
     path : string
     icon? : string
+}
+
+export interface IProfileItems {
+    id : number
+    title : string
+    
 }
 
 export const MenuItems : IMenu[] = [
@@ -12,5 +19,11 @@ export const MenuItems : IMenu[] = [
     {id : 4 , name : "آزمون ها" , path : "/exams" , icon : "ri-contract-line"},
     {id : 5 , name : "مشاوره" , path : "/counseling" , icon : "ri-guide-line"},
     {id : 6 , name : "تنظیمات" , path : "/setting" , icon : "ri-window-line"}
+]
+
+export const ProfileItems : IProfileItems[] = [
+    {id :1 , title : "نام کاربری" },
+    {id : 2 , title : "رمز عبور"},
+    {id : 3 , title : "ایمیل"}
 
 ]

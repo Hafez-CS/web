@@ -1,61 +1,84 @@
 import { useForm } from "react-hook-form";
-import type { ISignUp } from "./@types.ts";
+import type { ISignUp, ISignUpPayload } from "./@types.ts";
 import { Link } from "react-router-dom";
-
+import { useMutation } from "@tanstack/react-query";
+import { auth } from "../../../services/auth/auth.service.ts";
+import { toast } from "react-toastify";
 export default function SignUp() {
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<ISignUp>(); //
+  } = useForm<ISignUp>();
+
+  const SendData = useMutation({
+    mutationFn: auth.SignUp,
+    onError: () => {
+      toast.error("خطا در ثبت نام");
+    },
+    onSuccess: () => {
+      toast.success("ثبت نام با موفقیت انجام شد");
+    },
+  });
 
   const SendDataHandler = (data: ISignUp) => {
-    console.log("🚀 ~ SendDataHandler ~ data:", data);
-    reset();
+    if(data.password === data.acceptPassword){
+      const Payload : ISignUpPayload = {
+        username : data.username,
+        password : data.password,
+        email : data.email
+      }
+      SendData.mutate(Payload);
+      console.log("🚀 ~ SendDataHandler ~ data:", data);
+      reset();
+    }
+    else{
+      toast.error("رمز عبور مطابقت ندارد")
+    }
   };
 
   return (
     <section className="w-full h-screen bg-primary flex md:justify-normal justify-center items-center">
+ 
       <div className="w-1/2 hidden h-screen bg-secondry md:flex justify-center items-center">
-        <h1 className="text-4xl font-bold text-white">ثبت نام</h1>
+        <h1 className="text-5xl font-extrabold text-white">ثبت نام</h1>
       </div>
+
+    
       <div className="md:w-1/2 w-full flex justify-center items-center">
         <form
-          className="flex flex-col w-full justify-center h-[750px] gap-10 max-w-[600px] bg-GrayColor p-6 rounded-2xl"
+          className="flex flex-col w-full justify-center h-auto gap-8 max-w-[500px] bg-white p-10 rounded-2xl shadow-xl"
           onSubmit={handleSubmit(SendDataHandler)}
         >
-          <h1 className="text-2xl text-blackColor text-center font-bold">
+          <h1 className="text-3xl text-blackColor text-center font-bold mb-4">
             فرم ثبت نام
           </h1>
+
+       
           <div className="flex flex-col gap-2">
-            <label
-              className="text-base text-blackColor font-bold"
-              htmlFor="userName"
-            >
+            <label className="text-base text-blackColor font-semibold">
               نام کاربری :
             </label>
             <input
-              className="p-2 text-center rounded-md bg-[#ffffff]"
+              className="p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-secondry text-black"
               type="text"
-              {...register("userName", { required: "نام کاربری الزامیست" })}
+              {...register("username", { required: "نام کاربری الزامیست" })}
             />
-            {errors.userName && (
+            {errors.username && (
               <p className="text-red-500 font-bold text-sm">
-                {errors.userName.message}
+                {errors.username.message}
               </p>
             )}
           </div>
 
+       
           <div className="flex flex-col gap-2">
-            <label
-              className="text-base text-blackColor font-bold"
-              htmlFor="password"
-            >
+            <label className="text-base text-blackColor font-semibold">
               رمز عبور :
             </label>
             <input
-              className="p-2 text-center rounded-md bg-[#ffffff]"
+              className="p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-secondry text-black"
               type="password"
               {...register("password", { required: "رمز عبور الزامیست" })}
             />
@@ -66,15 +89,13 @@ export default function SignUp() {
             )}
           </div>
 
+
           <div className="flex flex-col gap-2">
-            <label
-              className="text-base text-blackColor font-bold"
-              htmlFor="acceptPassword"
-            >
+            <label className="text-base text-blackColor font-semibold">
               تایید رمز عبور :
             </label>
             <input
-              className="p-2 text-center rounded-md bg-[#ffffff]"
+              className="p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-secondry text-black"
               type="password"
               {...register("acceptPassword", {
                 required: "تایید رمز عبور الزامیست",
@@ -86,36 +107,31 @@ export default function SignUp() {
               </p>
             )}
           </div>
-
           <div className="flex flex-col gap-2">
-            <label
-              className="text-base text-blackColor font-bold"
-              htmlFor="email"
-            >
+            <label className="text-base text-blackColor font-semibold">
               ایمیل :
             </label>
             <input
-              className="p-2 text-center rounded-md bg-[#ffffff]"
+              className="p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-secondry text-black"
               type="email"
-              {...register("email", { required: "ایمیل الزامیست" })}
+              {...register("email" )}
             />
-            {errors.email && (
-              <p className="text-red-500 font-bold text-sm">
-                {errors.email.message}
-              </p>
-            )}
+            
           </div>
 
+         
           <button
-            className="rounded-xl cursor-pointer transition-colors hover:bg-blackColor bg-secondry text-white font-extrabold p-2 flex justify-center items-center"
+            className="rounded-xl cursor-pointer transition-colors py-4 hover:bg-black bg-secondry text-white font-extrabold flex justify-center items-center"
             type="submit"
           >
             ثبت نام
           </button>
 
-          <Link className="" to={"/login"}>
-            <p className="text-center mx-auto text-black pt-10 font-black">
-              حساب کاربری دارید؟ <span className="text-secondry">ورود</span>
+          
+          <Link to={"/login"}>
+            <p className="text-center text-black pt-4 font-medium">
+              حساب کاربری دارید؟{" "}
+              <span className="text-secondry font-bold">ورود</span>
             </p>
           </Link>
         </form>
