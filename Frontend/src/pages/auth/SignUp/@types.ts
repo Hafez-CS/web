@@ -1,6 +1,12 @@
 export interface ISignUp {
-    userName : string
+    username : string
     password : string
     acceptPassword  : string
-    email? : string
+    email : string
+}
+
+export interface ISignUpPayload {
+    username : string
+    password : string
+    email : string
 }

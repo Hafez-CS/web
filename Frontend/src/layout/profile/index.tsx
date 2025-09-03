@@ -79,10 +79,10 @@ const ProfileLayout: React.FC = () => {
             <Button onClick={SignOut} type="primary">خروج</Button>
         </div>
       </Header>
-      <div style={{ padding: "0 0" , }}>
+      <div style={{ padding: "0 0" }}>
         <Layout
           style={{
-            padding: "24px 0",
+            padding: "12px 0",
             fontFamily : "Vazir" ,
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
@@ -92,7 +92,7 @@ const ProfileLayout: React.FC = () => {
             <Menu
               mode="inline"
               defaultSelectedKeys={["/"]}
-              style={{ height: "100%" , color : "#284b63" , } }
+              style={{ height: "100%" , color : "#284b63" , width : "160px" } }
               items={menuItems}
               onClick={handleMenuClick}
             />
