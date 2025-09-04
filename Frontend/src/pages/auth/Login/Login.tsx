@@ -1,10 +1,12 @@
-import { useForm } from "react-hook-form";
+
 import type { ILogin } from "./@types";
 import Cookies from "js-cookie";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { auth } from "../../../services/auth/auth.service";
 import { toast } from "react-toastify";
+import { useForm } from "react-hook-form";
+
 
 export default function Login() {
   const navigate = useNavigate();
@@ -21,7 +23,6 @@ export default function Login() {
       toast.error("خطا در لاگین");
     },
     onSuccess: (data) => {
-
       console.log("🚀 ~ Login ~ data:", data.data);
       toast.success("با موفقیت وارد شدید");
       Cookies.set("token-access", data.data.access);
@@ -46,9 +47,11 @@ export default function Login() {
           فرم ورود
         </h1>
 
-      
         <div className="flex flex-col gap-2">
-          <label className="text-base text-black font-semibold" htmlFor="userName">
+          <label
+            className="text-base text-black font-semibold"
+            htmlFor="userName"
+          >
             ایمیل :
           </label>
           <input
@@ -63,9 +66,11 @@ export default function Login() {
           )}
         </div>
 
-
         <div className="flex flex-col gap-2">
-          <label className="text-base text-black font-semibold" htmlFor="password">
+          <label
+            className="text-base text-black font-semibold"
+            htmlFor="password"
+          >
             رمز عبور :
           </label>
           <input
@@ -80,7 +85,6 @@ export default function Login() {
           )}
         </div>
 
-       
         <button
           className="rounded-xl cursor-pointer transition-colors py-3 hover:bg-black bg-secondry text-white font-extrabold flex justify-center items-center"
           type="submit"
@@ -88,7 +92,6 @@ export default function Login() {
           ورود
         </button>
 
-        
         <Link to={`/signup`}>
           <p className="text-center mx-auto text-black pt-6 font-medium">
             حساب ندارید؟{" "}

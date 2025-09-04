@@ -1,29 +1,21 @@
 import React from "react";
 import {
-    BookOutlined,
- 
+  BookOutlined,
   FileExclamationOutlined,
- 
   GoldOutlined,
-
- 
   MedicineBoxOutlined,
- 
   SettingOutlined,
- 
   UserOutlined,
-
 } from "@ant-design/icons";
-import Cookies from "js-cookie";
+import Cookies from "../../../node_modules/@types/js-cookie";
 import type { MenuProps } from "antd";
 import { Button, Layout, Menu, theme } from "antd";
 import { Outlet, useNavigate } from "react-router-dom";
 
-
 const { Header, Content, Sider } = Layout;
 
 const ProfileLayout: React.FC = () => {
-    const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -57,34 +49,41 @@ const ProfileLayout: React.FC = () => {
     },
     {
       key: "/setting",
-      icon: <SettingOutlined/>,
+      icon: <SettingOutlined />,
       label: "تنظیمات",
     },
-
-    
   ];
 
   const handleMenuClick: MenuProps["onClick"] = (e) => {
-    navigate(e.key); 
+    navigate(e.key);
   };
   const SignOut = () => {
     Cookies.remove("token-access");
-    Cookies.remove("token-refresh")
+    Cookies.remove("token-refresh");
     navigate("/login");
   };
   return (
-    <Layout style={{ height: "100vh" , fontFamily:"Vazir" }}>
-      <Header style={{ display: "flex", alignItems: "center" , justifyContent : "space-between" , backgroundColor : "#284b63" }}>
+    <Layout style={{ height: "100vh", fontFamily: "Vazir" }}>
+      <Header
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          backgroundColor: "#284b63",
+        }}
+      >
         <div className="text-white font-bold Yekan text-lg">سایت</div>
         <div className="text-white flex gap-4 font-bold Yekan text-lg">
-            <Button onClick={SignOut} type="primary">خروج</Button>
+          <Button onClick={SignOut} type="primary">
+            خروج
+          </Button>
         </div>
       </Header>
       <div style={{ padding: "0 0" }}>
         <Layout
           style={{
             padding: "12px 0",
-            fontFamily : "Vazir" ,
+            fontFamily: "Vazir",
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
           }}
@@ -93,7 +92,7 @@ const ProfileLayout: React.FC = () => {
             <Menu
               mode="inline"
               defaultSelectedKeys={["/"]}
-              style={{ height: "100%" , color : "#284b63" , width : "160px" } }
+              style={{ height: "100%", color: "#284b63", width: "160px" }}
               items={menuItems}
               onClick={handleMenuClick}
             />
