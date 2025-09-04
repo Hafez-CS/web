@@ -1,4 +1,4 @@
-import Cookies from "../../../../node_modules/@types/js-cookie";
+import Cookies from "js-cookie";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ProfileItems, type IForm, type IProfileItems } from "./@types";
 import { profileInfo } from "../../../services/profile/profile.service";
@@ -9,11 +9,16 @@ import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
   const navigate = useNavigate();
+  const token_access = Cookies.get("token-access")
+  const token_refresh = Cookies.get("token-refresh")
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const { data: getProfileInfo, refetch } = useQuery({
     queryKey: ["ProfileInfo"],
     queryFn: profileInfo.getProfileInfo,
   });
+  if(!token_access){
+    navigate("/login")
+  }
   if (getProfileInfo?.status === 401) {
     Cookies.remove("token-access");
     Cookies.remove("token-refresh");

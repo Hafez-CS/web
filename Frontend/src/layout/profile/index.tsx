@@ -7,7 +7,7 @@ import {
   SettingOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import Cookies from "../../../node_modules/@types/js-cookie";
+import Cookies from "js-cookie";
 import type { MenuProps } from "antd";
 import { Button, Layout, Menu, theme } from "antd";
 import { Outlet, useNavigate } from "react-router-dom";

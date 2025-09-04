@@ -1,4 +1,4 @@
-import Cookies from "../../../node_modules/@types/js-cookie";
+import Cookies from "js-cookie";
 import { http } from "../../lib/http";
 import type { login } from "../auth/@types";
 import type { IForm } from "../../pages/Panel/profile/@types";
