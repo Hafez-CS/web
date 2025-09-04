@@ -7,6 +7,7 @@ import Login from './pages/auth/Login/Login'
 import SignUp from './pages/auth/SignUp/SignUp'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ToastContainer } from 'react-toastify'
+import Reception from './pages/Panel/reception'
 
 
 
@@ -19,11 +20,11 @@ const queryclinet = new QueryClient()
       <Routes>
         <Route path="/" element={<ProfileLayout />}>
           <Route index path="/" element={<Profile />} />
-          <Route index path="/reception" element={<Profile />} />
-          <Route index path="/helper" element={<Profile />} />
-          <Route index path="/exams" element={<Profile />} />
-          <Route index path="/assistant" element={<Profile />} />
-          <Route index path="/setting" element={<Profile />} />
+          <Route index path="/reception" element={<Reception/>} />
+          <Route index path="/helper" element={<Reception/>} />
+          <Route index path="/exams" element={<Reception/>} />
+          <Route index path="/assistant" element={<Reception/>} />
+          <Route index path="/setting" element={<Reception/>} />
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />

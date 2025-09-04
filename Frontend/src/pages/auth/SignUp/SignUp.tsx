@@ -14,20 +14,20 @@ export default function SignUp() {
 
   const SendData = useMutation({
     mutationFn: auth.SignUp,
-    onError: () => {
-      toast.error("خطا در ثبت نام");
-    },
     onSuccess: () => {
       toast.success("ثبت نام با موفقیت انجام شد");
     },
+    onError : () =>{
+      toast.error("خطا در ثبت نام")
+    }
   });
 
   const SendDataHandler = (data: ISignUp) => {
     if(data.password === data.acceptPassword){
       const Payload : ISignUpPayload = {
         username : data.username,
-        password : data.password,
-        email : data.email
+        email : data.email,
+        password : data.password
       }
       SendData.mutate(Payload);
       console.log("🚀 ~ SendDataHandler ~ data:", data);

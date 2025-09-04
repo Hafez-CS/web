@@ -68,7 +68,8 @@ const ProfileLayout: React.FC = () => {
     navigate(e.key); 
   };
   const SignOut = () => {
-    Cookies.remove("token");
+    Cookies.remove("token-access");
+    Cookies.remove("token-refresh")
     navigate("/login");
   };
   return (

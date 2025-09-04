@@ -1,21 +1,21 @@
-import Cookies from "js-cookie"
+import Cookies from "../../../node_modules/@types/js-cookie";
 export interface login {
-    username : string
-    password : string
+  username: string;
+  password: string;
 }
 export interface signup {
-    username : string
-    email : string
-    password : string
+  username: string;
+  email: string;
+  password: string;
 }
 export interface Rlogin {
-    access : string
-    refresh : string
+  access: string;
+  refresh: string;
 }
 export interface Rsignup {
-    id : number
-    username : string
-    email : string
+  id: number;
+  username: string;
+  email: string;
 }
 
-export const Token = Cookies.get("token")
+export const Token = Cookies.get("token-access");

@@ -21,9 +21,11 @@ export default function Login() {
       toast.error("خطا در لاگین");
     },
     onSuccess: (data) => {
-      console.log("🚀 ~ Login ~ data:", data);
+
+      console.log("🚀 ~ Login ~ data:", data.data);
       toast.success("با موفقیت وارد شدید");
-      Cookies.set("token", data.data.access);
+      Cookies.set("token-access", data.data.access);
+      Cookies.set("token-refresh", data.data.refresh);
       navigate("/");
     },
   });
@@ -47,16 +49,16 @@ export default function Login() {
       
         <div className="flex flex-col gap-2">
           <label className="text-base text-black font-semibold" htmlFor="userName">
-            نام کاربری :
+            ایمیل :
           </label>
           <input
             className="p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-secondry text-black"
-            {...register("userName", { required: "نام کاربری الزامی است" })}
-            type="text"
+            {...register("email", { required: "نام کاربری الزامی است" })}
+            type="email"
           />
-          {errors.userName && (
+          {errors.email && (
             <p className="text-red-500 font-bold text-sm">
-              {errors.userName.message}
+              {errors.email.message}
             </p>
           )}
         </div>

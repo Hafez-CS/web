@@ -23,7 +23,12 @@ export const MenuItems : IMenu[] = [
 
 export const ProfileItems : IProfileItems[] = [
     {id :1 , title : "نام کاربری" },
-    {id : 2 , title : "رمز عبور"},
-    {id : 3 , title : "ایمیل"}
-
+    {id : 3 , title : "ایمیل"},
+    {id :2 , title : "بیوگرافی" },
 ]
+
+export interface IForm {
+    username : string
+    email : string 
+    bio : string
+}
