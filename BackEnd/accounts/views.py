@@ -1,8 +1,44 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
 from .models import UserProfile
 from .serializers import UserSerializer, RegisterSerializer
+
+
+class LoginView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        if not email or not password:
+            return Response({
+                "success": False,
+                "message": "ایمیل و رمز عبور الزامی است."
+            }, status=status.HTTP_400_BAD_REQUEST)
+        user = authenticate(email=email, password=password)
+        if user is None:
+            return Response({
+                "success": False,
+                "message": "ایمیل یا رمز عبور اشتباه است."
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "success": True,
+            "message": "ورود با موفقیت انجام شد.",
+            "data": {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email
+                }
+            }
+        }, status=status.HTTP_200_OK)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -75,3 +111,12 @@ class ProfileView(generics.RetrieveUpdateAPIView):
                 "success": False,
                 "message": f"خطایی رخ داد: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class DeleteUserView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request):
+        user = request.user
+        user.delete()
+        return Response({"detail": "اکانت شما با موفقیت حذف گردید"}, status=status.HTTP_204_NO_CONTENT)
