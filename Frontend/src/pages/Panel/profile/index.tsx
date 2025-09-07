@@ -16,14 +16,15 @@ export default function Profile() {
     queryKey: ["ProfileInfo"],
     queryFn: profileInfo.getProfileInfo,
   });
-  if(!token_access){
+  console.log("🚀 ~ Profile ~ token_refresh:", token_refresh)
+  if(token_refresh === undefined){
     navigate("/login")
   }
-  if (getProfileInfo?.status === 401) {
-    Cookies.remove("token-access");
-    Cookies.remove("token-refresh");
-    navigate("/login");
+  console.log("🚀 ~ Profile ~ token_access:", token_access)
+  if(!token_access === undefined){
+    navigate("/login")
   }
+  
   const UpdateProfileInfo = useMutation({
     mutationFn: profileInfo.updateProfileInfoPUT,
     onError: () => {

@@ -11,6 +11,7 @@ import Cookies from "js-cookie";
 import type { MenuProps } from "antd";
 import { Button, Layout, Menu, theme } from "antd";
 import { Outlet, useNavigate } from "react-router-dom";
+import { Token } from "../../services/auth/@types";
 
 const { Header, Content, Sider } = Layout;
 
@@ -57,10 +58,21 @@ const ProfileLayout: React.FC = () => {
   const handleMenuClick: MenuProps["onClick"] = (e) => {
     navigate(e.key);
   };
+  const token_access = Cookies.get("token-access");
+  const token_refresh = Cookies.get("token-refresh");
+  React.useEffect(() => {
+
+    if (!token_access || !token_refresh) {
+      Cookies.remove("token-access");
+      Cookies.remove("token-refresh");
+      navigate("/login");
+    }
+  }, [token_access, token_refresh, navigate]);
+
   const SignOut = () => {
-    Cookies.remove("token-access");
-    Cookies.remove("token-refresh");
-    navigate("/login");
+  Cookies.remove("token-access");
+  Cookies.remove("token-refresh");
+  navigate("/login");
   };
   return (
     <Layout style={{ height: "100vh", fontFamily: "Vazir" }}>
