@@ -16,14 +16,12 @@ class LoginView(APIView):
         password = request.data.get('password')
         if not email or not password:
             return Response({
-                "success": False,
-                "message": "ایمیل و رمز عبور الزامی است."
+                "detail": "ایمیل و رمز عبور الزامی است."
             }, status=status.HTTP_400_BAD_REQUEST)
         user = authenticate(email=email, password=password)
         if user is None:
             return Response({
-                "success": False,
-                "message": "ایمیل یا رمز عبور اشتباه است."
+                "detail": "ایمیل یا رمز عبور اشتباه است."
             }, status=status.HTTP_401_UNAUTHORIZED)
         refresh = RefreshToken.for_user(user)
         return Response({
@@ -54,13 +52,11 @@ class RegisterView(generics.CreateAPIView):
             email = serializer.validated_data.get('email')
             if UserProfile.objects.filter(username=username).exists():
                 return Response({
-                    "success": False,
-                    "message": "نام کاربری قبلاً ثبت شده است."
+                    "detail": "نام کاربری قبلاً ثبت شده است."
                 }, status=status.HTTP_400_BAD_REQUEST)
             if UserProfile.objects.filter(email=email).exists():
                 return Response({
-                    "success": False,
-                    "message": "ایمیل قبلاً ثبت شده است."
+                    "detail": "ایمیل قبلاً ثبت شده است."
                 }, status=status.HTTP_400_BAD_REQUEST)
             self.perform_create(serializer)
             return Response({
@@ -70,13 +66,11 @@ class RegisterView(generics.CreateAPIView):
             }, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({
-                "success": False,
-                "errors": e.detail
+                "detail": e.detail
             }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({
-                "success": False,
-                "message": f"خطایی رخ داد: {str(e)}"
+                "detail": f"خطایی رخ داد: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -85,13 +79,12 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
-        # یوزر لاگین شده بر اساس توکن
         return self.request.user
 
     def update(self, request, *args, **kwargs):
         user = self.get_object()
         serializer = self.get_serializer(
-            user, data=request.data, partial=True  # 🔑 فقط فیلدهای داده‌شده آپدیت میشن
+            user, data=request.data, partial=True
         )
         try:
             serializer.is_valid(raise_exception=True)
@@ -103,13 +96,11 @@ class ProfileView(generics.RetrieveUpdateAPIView):
             }, status=status.HTTP_200_OK)
         except ValidationError as e:
             return Response({
-                "success": False,
-                "errors": e.detail
+                "detail": e.detail
             }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({
-                "success": False,
-                "message": f"خطایی رخ داد: {str(e)}"
+                "detail": f"خطایی رخ داد: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
