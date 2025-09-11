@@ -1,9 +1,12 @@
 import type { ISignUp, ISignUpPayload } from "./@types.ts";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { auth } from "../../../services/auth/auth.service.ts";
 import { toast } from "react-toastify";
+import { useForm } from "react-hook-form";
+import type { AxiosError } from "axios";
 export default function SignUp() {
+ const navigate = useNavigate()
   const {
     register,
     handleSubmit,
@@ -15,11 +18,18 @@ export default function SignUp() {
   const SendData = useMutation({
     mutationFn: auth.SignUp,
     onSuccess: () => {
+      navigate("/login")
       toast.success("ثبت نام با موفقیت انجام شد");
     },
-    onError : () =>{
-      toast.error("خطا در ثبت نام")
-    }
+    onError: (error: AxiosError<any>) => {
+  console.log("🚀 ~ SignUp ~ error:", error);
+  const msguserName = error.response?.data?.errors?.username?.[0];
+  const msguserEmail = error.response?.data?.errors?.email?.[0];
+  toast.error(msguserName || null)
+  toast.error(msguserEmail || null)
+  
+}
+
   });
 
   const SendDataHandler = (data: ISignUp) => {

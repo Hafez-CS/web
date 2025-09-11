@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { auth } from "../../../services/auth/auth.service";
 import { toast } from "react-toastify";
 import { useForm } from "react-hook-form";
+import type { AxiosError } from "axios";
 
 
 export default function Login() {
@@ -18,8 +19,9 @@ export default function Login() {
 
   const SendData = useMutation({
     mutationFn: auth.Login,
-    onError: () => {
-      toast.error("خطا در لاگین");
+    onError: (error : AxiosError) => {
+      console.log("🚀 ~ Login ~ error:", error)
+      // toast.error(error.);
     },
     onSuccess: (data) => {
       console.log("🚀 ~ Login ~ data:", data.data);
