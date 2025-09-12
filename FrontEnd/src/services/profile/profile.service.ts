@@ -12,6 +12,14 @@ export class ProfileAPI {
       },
     });
   }
+  async DeleteAccount() {
+    const token = Cookies.get("token-access");
+    return await http.delete("/api/accounts/delete-user/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
 
   async updateProfileInfoPUT(payload: IForm) {
     const token = Cookies.get("token-access");
