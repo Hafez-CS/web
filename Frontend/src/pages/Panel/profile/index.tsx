@@ -1,6 +1,6 @@
 import Cookies from "js-cookie";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ProfileItems, type IForm, type IProfileItems } from "./@types";
+import { FormData, ProfileItems, type IForm, type IProfileItems } from "./@types";
 import { profileInfo } from "../../../services/profile/profile.service";
 import { Button, Form, Input, Modal } from "antd";
 import { useState } from "react";
@@ -32,7 +32,7 @@ export default function Profile() {
     },
     onSuccess: (data) => {
       console.log("🚀 ~ Profile ~ data:", data);
-      toast.success("پروفایل با موفقیت آپدیت شد");
+      toast.success(data.data.message);
       refetch();
     },
   });
@@ -72,36 +72,41 @@ export default function Profile() {
             ویرایش
           </Button>
         </div>
-        <section className="w-full h-full max-w-[1440px] gap-3 grid grid-cols-1 md:grid-cols-2 p-5 bg-gray-200 mt-20 rounded-md">
+        <section className="w-full h-full max-w-[1440px] gap-3 grid grid-cols-1 md:grid-cols-2 p-5 dark:bg-gray-900 bg-gray-200 mt-20 rounded-md">
           {dataList.map((item) => (
             <div
               key={item.id}
-              className="w-full min-w-[120px] h-[100px] bg-gray-300 rounded-md flex md:p-4 p-1 gap-2 items-center"
+              className="w-full min-w-[120px]   dark:bg-gray-700 bg-gray-300 rounded-md flex md:p-4 p-1 gap-x-2 items-center"
             >
-              <p className="text-[16px] font-normal">{item.title}:</p>
-              <span className="text-[20px] font-black">{item.value}</span>
+              <p className="text-[16px] text-black dark:text-white font-normal">{item.title}:</p>
+              <span className="text-[20px] text-black dark:text-white font-black">{item.value}</span>
             </div>
           ))}
         </section>
       </div>
       <Modal
         footer={null}
+        title={"ویرایش مشخصات کاربری"}
         onCancel={() => setIsModalOpen(false)}
         open={isModalOpen}
       >
         <Form
-          style={{ padding: "40px 0px" }}
+          style={{ padding: "20px 20px" , display : "flex" , flexDirection : "column", gap : "2px" }}
           onFinish={changeInfoFormHandleSubmit}
         >
-          <Form.Item label={"نام کاربری "} name={"username"}>
-            <Input />
+          {FormData.map((data)=>{
+            return(
+          <Form.Item key={data.id} label={data.label} name={data.name}>
+            <Input style={{width : "300px"}} className="w-[100px]" />
           </Form.Item>
-          <Form.Item label={"ایمیل"} name={"email"}>
-            <Input />
+            )
+          })}
+          {/* <Form.Item label={"ایمیل"} name={"email"}>
+            <Input style={{width : "300px"}} />
           </Form.Item>
           <Form.Item label={"بیوگرافی "} name={"bio"}>
-            <Input />
-          </Form.Item>
+            <Input style={{width : "300px"}} />
+          </Form.Item> */}
           <Button htmlType="submit" type="primary">
             تایید
           </Button>

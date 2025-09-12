@@ -49,7 +49,7 @@ export default function SignUp() {
   };
 
   return (
-    <section className="w-full h-screen bg-primary flex md:justify-normal justify-center items-center">
+    <section className="w-full h-screen overflow-y-hidden bg-primary flex md:justify-normal justify-center items-center">
  
       <div className="w-1/2 hidden h-screen bg-secondry md:flex justify-center items-center">
         <h1 className="text-5xl font-extrabold text-white">ثبت نام</h1>
@@ -131,7 +131,7 @@ export default function SignUp() {
 
          
           <button
-            className="rounded-xl cursor-pointer transition-colors py-4 hover:bg-black bg-secondry text-white font-extrabold flex justify-center items-center"
+            className="rounded-xl cursor-pointer transition-colors py-4 hover:bg-black bg-secondry text-GrayColor dark:text-GrayColor font-extrabold flex justify-center items-center"
             type="submit"
           >
             ثبت نام

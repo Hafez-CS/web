@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   BookOutlined,
   FileExclamationOutlined,
@@ -6,62 +6,41 @@ import {
   MedicineBoxOutlined,
   SettingOutlined,
   UserOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from "@ant-design/icons";
 import Cookies from "js-cookie";
 import type { MenuProps } from "antd";
 import { Button, Layout, Menu, theme } from "antd";
 import { Outlet, useNavigate } from "react-router-dom";
-import { Token } from "../../services/auth/@types";
 
 const { Header, Content, Sider } = Layout;
 
 const ProfileLayout: React.FC = () => {
   const navigate = useNavigate();
+  const [collapsed, setCollapsed] = useState(false);
 
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
   const menuItems: MenuProps["items"] = [
-    {
-      key: "/",
-      icon: <UserOutlined />,
-      label: "پروفایل",
-    },
-    {
-      key: "/reception",
-      icon: <BookOutlined />,
-      label: "پیشخوان",
-    },
-    {
-      key: "/helper",
-      icon: <MedicineBoxOutlined />,
-      label: "دستیار",
-    },
-    {
-      key: "/exams",
-      icon: <FileExclamationOutlined />,
-      label: "آزمون ها",
-    },
-    {
-      key: "/assistant",
-      icon: <GoldOutlined />,
-      label: "مشاوره",
-    },
-    {
-      key: "/setting",
-      icon: <SettingOutlined />,
-      label: "تنظیمات",
-    },
+    { key: "/", icon: <UserOutlined />, label: "پروفایل" },
+    { key: "/reception", icon: <BookOutlined />, label: "پیشخوان" },
+    { key: "/helper", icon: <MedicineBoxOutlined />, label: "دستیار" },
+    { key: "/exams", icon: <FileExclamationOutlined />, label: "آزمون ها" },
+    { key: "/assistant", icon: <GoldOutlined />, label: "مشاوره" },
+    { key: "/setting", icon: <SettingOutlined />, label: "تنظیمات" },
   ];
 
   const handleMenuClick: MenuProps["onClick"] = (e) => {
     navigate(e.key);
   };
+
   const token_access = Cookies.get("token-access");
   const token_refresh = Cookies.get("token-refresh");
-  React.useEffect(() => {
 
+  React.useEffect(() => {
     if (!token_access || !token_refresh) {
       Cookies.remove("token-access");
       Cookies.remove("token-refresh");
@@ -70,10 +49,11 @@ const ProfileLayout: React.FC = () => {
   }, [token_access, token_refresh, navigate]);
 
   const SignOut = () => {
-  Cookies.remove("token-access");
-  Cookies.remove("token-refresh");
-  navigate("/login");
+    Cookies.remove("token-access");
+    Cookies.remove("token-refresh");
+    navigate("/login");
   };
+
   return (
     <Layout style={{ height: "100vh", fontFamily: "Vazir" }}>
       <Header
@@ -91,29 +71,42 @@ const ProfileLayout: React.FC = () => {
           </Button>
         </div>
       </Header>
-      <div style={{ padding: "0 0" }}>
-        <Layout
-          style={{
-            padding: "12px 0",
-            fontFamily: "Vazir",
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-          }}
+
+      <Layout style={{ fontFamily: "Vazir", background: colorBgContainer, borderRadius: borderRadiusLG }}>
+        <Sider
+          collapsible
+          collapsed={collapsed}
+          onCollapse={(value) => setCollapsed(value)}
+          width={200}
+          style={{ background: colorBgContainer }}
         >
-          <Sider style={{ background: colorBgContainer }} width={200}>
-            <Menu
-              mode="inline"
-              defaultSelectedKeys={["/"]}
-              style={{ height: "100%", color: "#284b63", width: "160px" }}
-              items={menuItems}
-              onClick={handleMenuClick}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: collapsed ? "center" : "flex-end",
+              padding: "8px 12px",
+            }}
+          >
+            <Button
+              type="text"
+              onClick={() => setCollapsed(!collapsed)}
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             />
-          </Sider>
-          <Content style={{ padding: "0 24px", minHeight: "100%" }}>
+          </div>
+          <Menu
+            mode="inline"
+            defaultSelectedKeys={["/"]}
+            style={{ height: "100%", color: "#284b63", width: "100%" }}
+            items={menuItems}
+            onClick={handleMenuClick}
+          />
+        </Sider>
+        <Layout>
+          <Content style={{ padding: "24px", minHeight: "100%" }}>
             <Outlet />
           </Content>
         </Layout>
-      </div>
+      </Layout>
     </Layout>
   );
 };

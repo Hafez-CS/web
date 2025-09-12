@@ -31,4 +31,15 @@ export interface IForm {
     username : string
     email : string 
     bio : string
+
 }
+export interface IForm2 {
+    id : number 
+    label : string
+    name : string
+}
+export const FormData : IForm2[]  = [
+    {id : 1 , label : "نام کاربری" ,name : "username"},
+    {id : 2 , label : "ایمیل" ,name : "email"},
+    {id : 3 , label : "بیوگرافی" ,name : "bio"},
+]

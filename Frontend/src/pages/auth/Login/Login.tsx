@@ -19,18 +19,27 @@ export default function Login() {
 
   const SendData = useMutation({
     mutationFn: auth.Login,
-    onError: (error : AxiosError) => {
-      console.log("🚀 ~ Login ~ error:", error)
-      // toast.error(error.);
+    onSuccess: (res) => {
+      const { data } = res; // همون response
+      if (data?.data) {
+      
+        toast.success(data.message || "ورود موفقیت‌آمیز بود");
+        Cookies.set("token-access", data.data.access);
+        Cookies.set("token-refresh", data.data.refresh);
+        navigate("/");
+      } else {
+        
+        toast.error(data?.message || "ورود ناموفق بود");
+      }
     },
-    onSuccess: (data) => {
-      console.log("🚀 ~ Login ~ data:", data.data);
-      toast.success("با موفقیت وارد شدید");
-      Cookies.set("token-access", data.data.access);
-      Cookies.set("token-refresh", data.data.refresh);
-      navigate("/");
+    onError: (error: unknown) => {
+      const err = error as AxiosError<{ message?: string }>;
+      console.log("🚀 ~ Login ~ err:", err)
+      if(err.status === 401) toast.error("ایمیل یا رمز عبور اشتباه است")
+      if(err.status === 500) toast.error("خطا از سمت سرور")
     },
   });
+  
 
   const SendDataHandler = (data: ILogin) => {
     SendData.mutate(data);
