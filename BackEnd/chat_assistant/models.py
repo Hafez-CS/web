@@ -3,19 +3,16 @@ from accounts.models import UserProfile
 
 # Create your models here.
 
-class Message(models.Model):
-    ROLE_CHOICES = (
-        ('user', 'User'),
-        ('ai', 'AI'),
-    )
+class Chat(models.Model):
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="chats")
+    slug = models.SlugField(unique=True, blank=True)
+    content = models.JSONField(default=list)
 
-    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='messages')
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
-    content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            chat_count = Chat.objects.filter(user=self.user).count() + 1
+            self.slug = f"{self.user.username}-{chat_count}"
+        super().save(*args, **kwargs)
 
-    class Meta:
-        ordering = ['created_at']
-    
     def __str__(self):
-        return f"{self.role}: {self.content[:30]}"
+        return self.slug

@@ -2,7 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from django.contrib.auth import authenticate
 from .models import UserProfile
 from .serializers import UserSerializer, RegisterSerializer
@@ -111,3 +111,19 @@ class DeleteUserView(APIView):
         user = request.user
         user.delete()
         return Response({"detail": "اکانت شما با موفقیت حذف گردید"}, status=status.HTTP_204_NO_CONTENT)
+
+class LogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        refresh_token = request.data.get("refresh")
+        if not refresh_token:
+            return Response({"detail": "رفرش توکن ارسال نشده است."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"detail": "خروج با موفقیت انجام شد."}, status=status.HTTP_200_OK)
+        except TokenError:
+            return Response({"detail": "توکن نامعتبر است یا قبلاً بلاک شده است."}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"detail": f"خطا: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
