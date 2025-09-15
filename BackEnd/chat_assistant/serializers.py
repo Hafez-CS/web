@@ -1,8 +1,12 @@
 from rest_framework import serializers
-from .models import Chat
+from .models import Chat, ChatRoom
 
-class ChatSerializer(serializers.ModelSerializer):
+class ChatRoomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatRoom
+        fields = ["id", "slug", "name", "created_at"]
+    
+class ChatSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = Chat
-        fields = ["id", "slug", "user", "content"]
-        read_only_fields = ["id", "slug", "user"]
+        fields = ["user", "updated_at"]

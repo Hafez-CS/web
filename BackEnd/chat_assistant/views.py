@@ -1,72 +1,128 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
-from .models import Chat
-from .serializers import ChatSerializer
+from .models import Chat, ChatRoom
+from .serializers import ChatRoomSerializer, ChatSummarySerializer
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.db import transaction
+from django.utils.dateparse import parse_datetime
+import uuid
 
 # Create your views here.
 
-def get_ai_response(user_message):
-    return f"پاسخ AI به {user_message}"
+MAX_LIMIT = 1000
+DEFAULT_LIMIT = 100
 
-class NewChatView(APIView):
+class NewChatRoomView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        chat = Chat.objects.create(user=request.user, content=[])
-        serializer = ChatSerializer(chat)
-        return Response(serializer.data, status=201)
+        chat, _ = Chat.objects.get_or_create(user=request.user)
+        name = request.data.get("name", "")
+        room = ChatRoom.objects.create(user=request.user, chat=chat, name=name)
+        return Response(ChatRoomSerializer(room).data, status=status.HTTP_201_CREATED)
+    
+class ListChatRoomsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
+    def get(self, request):
+        rooms = ChatRoom.objects.filter(user=request.user).order_by('-created_at')
+        serializer = ChatRoomSerializer(rooms, many=True)
+        return Response(serializer.data)
 
 class SendMessageView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request, username, chat_id):
-        chat = get_object_or_404(Chat, user__username=username, id=chat_id)
+    def post(self, request, slug):
+        room = get_object_or_404(ChatRoom, slug=slug, user=request.user)
+        chat = room.chat
 
-        message = request.data.get("message")
-        if not message:
-            return Response({"error": "Message is required"}, status=400)
+        message_text = request.data.get("message")
+        if not message_text:
+            return Response({
+                "error": "message is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
 
-        chat.content.append({"sender": "user", "message": message})
-        bot_response = f"Echo: {message}"
-        chat.content.append({"sender": "bot", "message": bot_response})
-        chat.save()
-        serializer = ChatSerializer(chat)
-        return Response(serializer.data)
+        user_msg = {
+            "id": str(uuid.uuid4()),
+            "room": room.slug,
+            "sender": "user",
+            "message": message_text,
+            "timestamp": timezone.now().isoformat()
+        }
 
+        ai_msg = {
+            "id": str(uuid.uuid4()),
+            "room": room.slug,
+            "sender": "bot",
+            "message": f"Echo: {message_text}",
+            "timestamp": timezone.now().isoformat()
+        }
 
+        with transaction.atomic():
+            chat = Chat.objects.select_for_update().get(pk=chat.pk)
+            # Ensure chat.content is a list
+            if not isinstance(chat.content, list):
+                chat.content = []
+            chat.content.append(user_msg)
+            chat.content.append(ai_msg)
+            chat.save(update_fields=["content", "updated_at"])
+
+        return Response({
+            "room": room.slug,
+            "messages": [user_msg, ai_msg]
+        }, status=status.HTTP_200_OK)
+    
 class ChatHistoryView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, username, chat_id):
-        chat = get_object_or_404(Chat, user__username=username, id=chat_id)
-        serializer = ChatSerializer(chat)
-        return Response(serializer.data)
+    def get(self, request, slug):
+        room = get_object_or_404(ChatRoom, slug=slug, user=request.user)
+        chat = room.chat
 
-# class ChatHistoryView(APIView):
-#     permission_class = [permissions.IsAuthenticated]
+        all_messages = chat.content or []
+        room_messages = [m for m in all_messages if m.get("room") == room.slug]
 
-#     def get(self, request):
-#         messages = Message.objects.filter(user=request.user)
-#         serializer = MessageSerializer(messages, many=True)
-#         return Response(serializer.data)
+        try:
+            limit = min(int(request.query_params.get("limit", DEFAULT_LIMIT)), MAX_LIMIT)
+        except ValueError:
+            limit = DEFAULT_LIMIT
+        try:
+            offset = int(request.query_params.get("since", 0))
+        except ValueError:
+            offset = 0
+
+        since = request.query_params.get("since")
+        if since:
+            dt = parse_datetime(since)
+            if not dt:
+                return Response({
+                    "error": "since must be an ISO datetime"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            room_messages = [m for m in room_messages if parse_datetime(m.get("timestamp")) and parse_datetime(m.get("timestamp")) > dt]
+        
+        total = len(room_messages)
+        slice_messages = room_messages[offset: offset + limit]
+
+        return Response({
+            "room": room.slug,
+            "count": total,
+            "offset": offset,
+            "limit": limit,
+            "messages": slice_messages
+        })
     
-# class SendMessageView(APIView):
-#     permission_class = [permissions.IsAuthenticated]
+class ChatContentView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
-#     def post(self, request):
-#         user_msg = request.data.get("content")
-#         if not user_msg:
-#             return Response({"error": "متن پیام نمی تواند خالی باشد"}, status=status.HTTP_400_BAD_REQUEST)
-#         msg_user = Message.objects.create(user=request.user, role='user', content=user_msg)
-
-#         ai_answer = get_ai_response(user_msg)
-#         msg_ai = Message.objects.create(user=request.user, role='ai', content=ai_answer)
-
-#         return Response({
-#                 "user_message": MessageSerializer(msg_user).data,
-#                 "ai_message": MessageSerializer(msg_ai).data
-#             }, status=status.HTTP_201_CREATED)
-
+    def get(self, request):
+        chats = Chat.objects.filter(user=request.user)
+        data = []
+        for chat in chats:
+            data.append({
+                "id": chat.id,
+                "content": chat.content,
+                "updated_at": chat.updated_at,
+            })
+        return Response({"chats": data}, status=status.HTTP_200_OK)
