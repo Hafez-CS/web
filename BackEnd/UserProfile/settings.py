@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'chat_assistant',
     'accounts',
-    'drf_spectacular'
+    'drf_spectacular',
+    'exam',
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
