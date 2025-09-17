@@ -1,6 +1,7 @@
 from django.urls import path
-from .views import ExamDetailView
+from .views import ExamStartView, ExamSubmitView
 
 urlpatterns = [
-    path('<str:title>/', ExamDetailView.as_view(), name='exam-detail'),
+    path('start/', ExamStartView.as_view(), name='exam-start'),
+    path('submit/', ExamSubmitView.as_view(), name='exam-submit'),
 ]

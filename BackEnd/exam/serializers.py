@@ -1,22 +1,8 @@
 from rest_framework import serializers
-from .models import Exam, Question, UserScore, UserAnswer
-
-class QuestionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Question
-        fields = ['id', 'question_text', 'options']
+from .models import Exam
 
 class ExamSerializer(serializers.ModelSerializer):
-    questions = QuestionSerializer(many=True, read_only=True)
-
     class Meta:
         model = Exam
-        fields = ['title', 'questions']
-
-class UserAnswerSerializer(serializers.Serializer):
-    answers = serializers.DictField(child=serializers.CharField(max_length=100))
-
-class UserScoreSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserScore
-        fields = ['score', 'created_at', 'ai_response']
+        fields = ["id", "title", "score", "created_at"]
+        read_only_fields = ["score", "created_at"]
