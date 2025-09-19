@@ -8,6 +8,7 @@ from chat_assistant.models import Chat, ChatRoom
 from django.utils import timezone
 import uuid
 from .ai_client import send_exam_to_ai
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 print("Loading exam/views.py") 
 
@@ -30,12 +31,64 @@ class ExamView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ExamSerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='title', type=str, location=OpenApiParameter.PATH, description='عنوان آزمون'),
+        ],
+        responses={
+            200: {
+                'type': 'object',
+                'properties': {
+                    'title': {'type': 'string'},
+                    'questions': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'properties': {
+                                'id': {'type': 'integer'},
+                                'question_text': {'type': 'string'},
+                                'options': {'type': 'object'},
+                                'correct_answer': {'type': 'string'},
+                            },
+                        },
+                    },
+                },
+            },
+        },
+        summary="دریافت سوالات آزمون",
+        description="بازگرداندن سوالات آزمون با عنوان مشخص",
+    )
+
     def get(self, request, title, *args, **kwargs):
         print(f"ExamView GET called with title: {title}")
         return Response({
             "title": title,
             "questions": QUESTIONS
         }, status=status.HTTP_200_OK)
+    
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='title', type=str, location=OpenApiParameter.PATH, description='عنوان آزمون'),
+        ],
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'answers': {
+                        'type': 'object',
+                        'description': 'پاسخ‌های کاربر به سوالات (کلید: id سوال، مقدار: پاسخ)',
+                    },
+                },
+                'required': ['answers'],
+            }
+        },
+        responses={
+            201: ExamSerializer,
+            400: {'type': 'object', 'properties': {'detail': {'type': 'string'}}},
+        },
+        summary="ارسال پاسخ‌های آزمون",
+        description="ثبت پاسخ‌های کاربر برای آزمون و ایجاد اتاق چت برای تحلیل",
+    )
 
     def post(self, request, title, *args, **kwargs):
         print(f"ExamView POST called with title: {title}")

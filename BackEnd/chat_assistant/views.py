@@ -11,6 +11,7 @@ import uuid
 from openai import OpenAI 
 from django.conf import settings
 from exam.models import Exam
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 import re
 
 QUESTIONS = [
@@ -33,6 +34,23 @@ DEFAULT_LIMIT = 100
 
 class NewChatRoomView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    
+    @extend_schema(
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'name': {'type': 'string', 'description': 'نام اتاق چت (اختیاری)'},
+                },
+            }
+        },
+        responses={
+            201: ChatRoomSerializer,
+            400: {'type': 'object', 'properties': {'error': {'type': 'string'}}},
+        },
+        summary="ایجاد یک اتاق چت جدید",
+        description="ایجاد یک اتاق چت برای کاربر لاگین‌شده با نام اختیاری",
+    )
 
     def post(self, request):
         chat, _ = Chat.objects.get_or_create(user=request.user)
@@ -43,6 +61,12 @@ class NewChatRoomView(APIView):
 class ListChatRoomsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        responses={200: ChatRoomSerializer(many=True)},
+        summary="لیست اتاق‌های چت کاربر",
+        description="بازگرداندن تمام اتاق‌های چت کاربر لاگین‌شده به ترتیب تاریخ ایجاد",
+    )
+
     def get(self, request):
         rooms = ChatRoom.objects.filter(user=request.user).order_by('-created_at')
         serializer = ChatRoomSerializer(rooms, many=True)
@@ -50,6 +74,45 @@ class ListChatRoomsView(APIView):
 
 class SendMessageView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='slug', type=str, location=OpenApiParameter.PATH, description='شناسه اتاق چت'),
+        ],
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string', 'description': 'متن پیام کاربر'},
+                },
+                'required': ['message'],
+            }
+        },
+        responses={
+            200: {
+                'type': 'object',
+                'properties': {
+                    'room': {'type': 'string', 'description': 'شناسه اتاق چت'},
+                    'messages': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'properties': {
+                                'id': {'type': 'string'},
+                                'room': {'type': 'string'},
+                                'sender': {'type': 'string', 'enum': ['user', 'bot']},
+                                'message': {'type': 'string'},
+                                'timestamp': {'type': 'string', 'format': 'date-time'},
+                            },
+                        },
+                    },
+                },
+            },
+            400: {'type': 'object', 'properties': {'error': {'type': 'string'}}},
+        },
+        summary="ارسال پیام به اتاق چت",
+        description="ارسال پیام کاربر به اتاق چت و دریافت پاسخ از AI",
+    )
 
     def post(self, request, slug):
         room = get_object_or_404(ChatRoom, slug=slug, user=request.user)
@@ -141,6 +204,41 @@ class SendMessageView(APIView):
 
 class ChatHistoryView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='slug', type=str, location=OpenApiParameter.PATH, description='شناسه اتاق چت'),
+            OpenApiParameter(name='limit', type=int, location=OpenApiParameter.QUERY, description='حداکثر تعداد پیام‌ها', default=DEFAULT_LIMIT),
+            OpenApiParameter(name='since', type=str, location=OpenApiParameter.QUERY, description='فیلتر پیام‌ها بر اساس تاریخ ISO'),
+        ],
+        responses={
+            200: {
+                'type': 'object',
+                'properties': {
+                    'room': {'type': 'string'},
+                    'count': {'type': 'integer'},
+                    'offset': {'type': 'integer'},
+                    'limit': {'type': 'integer'},
+                    'messages': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'properties': {
+                                'id': {'type': 'string'},
+                                'room': {'type': 'string'},
+                                'sender': {'type': 'string', 'enum': ['user', 'bot']},
+                                'message': {'type': 'string'},
+                                'timestamp': {'type': 'string', 'format': 'date-time'},
+                            },
+                        },
+                    },
+                },
+            },
+            400: {'type': 'object', 'properties': {'error': {'type': 'string'}}},
+        },
+        summary="دریافت تاریخچه چت",
+        description="بازگرداندن پیام‌های یک اتاق چت با امکان فیلتر و صفحه‌بندی",
+    )
 
     def get(self, request, slug):
         room = get_object_or_404(ChatRoom, slug=slug, user=request.user)
