@@ -1,6 +1,7 @@
+# exam/urls.py
 from django.urls import path
-from .views import ExamView
+from . import views
 
 urlpatterns = [
-    path('<str:title>/', ExamView.as_view(), name='exam'),
+    path('<str:title>/', views.ExamView.as_view(), name='exam'),
 ]
