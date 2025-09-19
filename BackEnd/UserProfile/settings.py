@@ -148,3 +148,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Api Key for Deepseek
+# DEEPSEEK_API_KEY = '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'
+OPENROUTER_API_KEY = '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'

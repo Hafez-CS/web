@@ -8,6 +8,26 @@ from django.utils import timezone
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
 import uuid
+from openai import OpenAI 
+from django.conf import settings
+from exam.models import Exam  # ایمپورت مدل Exam
+import re
+
+# سوال‌های آزمون برای تحلیل
+QUESTIONS = [
+    {
+        "id": 1,
+        "question_text": "بزرگ‌ترین سیاره چیست؟",
+        "options": {"A": "مشتری", "B": "زحل", "C": "زمین", "D": "مریخ"},
+        "correct_answer": "A"
+    },
+    {
+        "id": 2,
+        "question_text": "ماه چند روزه دور زمین می‌چرخه؟",
+        "options": {"A": "14 روز", "B": "28 روز", "C": "30 روز", "D": "365 روز"},
+        "correct_answer": "B"
+    }
+]
 
 # Create your views here.
 
@@ -44,6 +64,7 @@ class SendMessageView(APIView):
                 "error": "message is required"
             }, status=status.HTTP_400_BAD_REQUEST)
 
+        # پیام کاربر
         user_msg = {
             "id": str(uuid.uuid4()),
             "room": room.slug,
@@ -52,17 +73,75 @@ class SendMessageView(APIView):
             "timestamp": timezone.now().isoformat()
         }
 
+        # پرامپت سیستمی
+        system_prompt = (
+            "تو یک معلم حرفه‌ای و صبور هستی که توضیحات ساده و آموزشی به فارسی می‌دی. "
+            "اگه کاربر درخواست تحلیل آزمون کرد، اطلاعات آزمونش رو تحلیل کن و توضیح بده."
+        )
+
+        # گرفتن تاریخچه چت برای این اتاق
+        all_messages = chat.content or []
+        room_messages = [m for m in all_messages if m.get("room") == room.slug]
+
+        # چک کردن درخواست تحلیل آزمون
+        is_exam_analysis = re.search(r'\b(تحلیل|آزمون|بررسی)\b', message_text, re.IGNORECASE)
+        ai_message = ""
+
+        if is_exam_analysis:
+            # گرفتن اطلاعات آزمون از نام اتاق
+            exam_title = room.name.replace("کمک برای آزمون ", "")
+            exam = Exam.objects.filter(user=request.user, title=exam_title).first()
+            if exam:
+                # فرض می‌کنیم پاسخ‌های کاربر از جایی ذخیره شدن (مثلاً در Exam)
+                # برای مثال ساده، پاسخ‌ها رو از پیام‌های قبلی شبیه‌سازی می‌کنیم
+                answers = {}  # باید منطق گرفتن پاسخ‌ها رو پیاده کنی (مثلاً از Exam یا درخواست)
+                answers_str = ", ".join([f"سوال {k}: {v}" for k, v in answers.items()]) if answers else "پاسخ‌ها در دسترس نیست"
+                questions_str = "\n".join([f"سوال {q['id']}: {q['question_text']} (پاسخ درست: {q['correct_answer']})" for q in QUESTIONS])
+                prompt = (
+                    f"تو یک معلم حرفه‌ای و صبور هستی. کاربر '{request.user.username}' در آزمون '{exam_title}' شرکت کرده و {exam.score} از {len(QUESTIONS)} امتیاز گرفته. "
+                    f"سوال‌های آزمون:\n{questions_str}\n"
+                    f"لطفاً تحلیل کن که کاربر در کدام سوال‌ها اشتباه کرده و توضیح ساده و آموزشی به فارسی بده که چطور می‌تونه ایراداتش رو برطرف کنه. "
+                    f"اگه همه جواب‌ها درست بود، یه پیام تشویقی بنویس."
+                )
+            else:
+                prompt = "متأسفم، اطلاعات آزمون پیدا نشد. لطفاً دوباره تلاش کنید یا جزئیات بیشتری بدید."
+        else:
+            prompt = message_text
+
+        # ساخت messages برای API با تاریخچه
+        api_messages = [{"role": "system", "content": system_prompt}]
+        for msg in room_messages[-5:]:
+            role = "user" if msg.get("sender") == "user" else "assistant"
+            api_messages.append({"role": role, "content": msg.get("message")})
+        api_messages.append({"role": "user", "content": prompt})
+
+        # ارسال به OpenRouter API
+        client = OpenAI(
+            api_key=settings.OPENROUTER_API_KEY,
+            base_url="https://openrouter.ai/api/v1"
+        )
+        try:
+            response = client.chat.completions.create(
+                model="deepseek/deepseek-chat",
+                messages=api_messages,
+                stream=False,
+                temperature=0.7,
+                max_tokens=500
+            )
+            ai_message = response.choices[0].message.content
+        except Exception as e:
+            ai_message = f"خطا در ارتباط با AI: {str(e)}"
+
         ai_msg = {
             "id": str(uuid.uuid4()),
             "room": room.slug,
             "sender": "bot",
-            "message": f"Echo: {message_text}",
+            "message": ai_message,
             "timestamp": timezone.now().isoformat()
         }
 
         with transaction.atomic():
             chat = Chat.objects.select_for_update().get(pk=chat.pk)
-            # Ensure chat.content is a list
             if not isinstance(chat.content, list):
                 chat.content = []
             chat.content.append(user_msg)
@@ -73,7 +152,8 @@ class SendMessageView(APIView):
             "room": room.slug,
             "messages": [user_msg, ai_msg]
         }, status=status.HTTP_200_OK)
-    
+
+# بقیه ویوها (بدون تغییر)
 class ChatHistoryView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -112,7 +192,7 @@ class ChatHistoryView(APIView):
             "limit": limit,
             "messages": slice_messages
         })
-    
+
 class ChatContentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
