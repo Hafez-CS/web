@@ -84,12 +84,10 @@ class SendMessageView(APIView):
             exam_title = room.name.replace("کمک برای آزمون ", "")
             exam = Exam.objects.filter(user=request.user, title=exam_title).first()
             if exam:
-                answers = exam.answers or {}
-                answers_str = ", ".join([f"سوال {k}: {v}" for k, v in answers.items()]) if answers else "پاسخ‌ها در دسترس نیست"
                 questions_str = "\n".join([f"سوال {q['id']}: {q['question_text']} (پاسخ درست: {q['correct_answer']})" for q in QUESTIONS])
                 prompt = (
                     f"تو یک معلم حرفه‌ای و صبور هستی. کاربر '{request.user.username}' در آزمون '{exam_title}' شرکت کرده و {exam.score} از {len(QUESTIONS)} امتیاز گرفته. "
-                    f"پاسخ‌های کاربر: {answers_str}. سوال‌های آزمون:\n{questions_str}\n"
+                    f". سوال‌های آزمون:\n{questions_str}\n"
                     f"لطفاً تحلیل کن که کاربر در کدام سوال‌ها اشتباه کرده و توضیح ساده و آموزشی به فارسی بده که چطور می‌تونه ایراداتش رو برطرف کنه. "
                     f"اگه همه جواب‌ها درست بود، یه پیام تشویقی بنویس."
                 )

@@ -45,17 +45,16 @@ class ExamView(generics.GenericAPIView):
             if str(q["id"]) in user_answers and user_answers[str(q["id"])] == q["correct_answer"]:
                 score += 1
         
-        if Exam.objects.filter(user=request.user, title=title).exists():
-            return Response({
-                "success": False,
-                "detail": "شما قبلاً در این آزمون شرکت کرده‌اید."
-            }, status=status.HTTP_400_BAD_REQUEST)
+        # if Exam.objects.filter(user=request.user, title=title).exists():
+        #     return Response({
+        #         "success": False,
+        #         "detail": "شما قبلاً در این آزمون شرکت کرده‌اید."
+        #     }, status=status.HTTP_400_BAD_REQUEST)
 
         exam = Exam.objects.create(
             user=request.user,
             title=title,
             score=score,
-            answers=user_answers
         )
 
         payload = {

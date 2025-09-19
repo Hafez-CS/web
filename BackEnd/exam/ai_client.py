@@ -5,14 +5,11 @@ def send_exam_to_ai(payload: dict):
     user = payload.get("user")
     exam_id = payload.get("exam_id")
     title = payload.get("title")
-    answers = payload.get("answers", {})
     score = payload.get("score", 0)
     total_questions = 2
 
-    answers_str = ", ".join([f"سوال {k}: {v}" for k, v in answers.items()]) if answers else "پاسخ‌ها در دسترس نیست"
     prompt = (
         f"کاربر با ایمیل '{user}' در آزمون '{title}' (شناسه: {exam_id}) شرکت کرده و {score} از {total_questions} امتیاز گرفته. "
-        f"پاسخ‌های کاربر: {answers_str}. "
         f"یه پیام کوتاه و دوستانه به فارسی بنویس که به کاربر بگه نتایج آزمونش آماده است و می‌تونه برای تحلیل بیشتر به چت مراجعه کنه."
     )
 

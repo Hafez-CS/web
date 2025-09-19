@@ -7,5 +7,5 @@ class ExamSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Exam
-        fields = ["id", "user", "title", "score", "answers", "created_at"]
+        fields = ["id", "user", "title", "score", "created_at"]
         read_only_fields = ["score", "created_at", "user"]
