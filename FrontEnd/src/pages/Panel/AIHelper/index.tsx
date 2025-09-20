@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { chatapi } from "../../../services/chat/chat.service";
 import { Button, Form, Input } from "antd";
 
@@ -13,10 +13,12 @@ interface IMessage {
 }
 
 export default function AIHelper() {
+  const {id} = useParams()
   const queryClient = useQueryClient();
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
-
+  
+  console.log("🚀 ~ AIHelper ~ id:", id)
   useEffect(() => {
     const token = Cookies.get("token-access");
     if (!token) navigate("/login");
@@ -26,6 +28,11 @@ export default function AIHelper() {
     queryKey: ["ChatMessages"],
     queryFn: chatapi.ChatHistory,
   });
+  const {data : getAllChats } = useQuery({
+    queryKey : ["GetAllChats"],
+    queryFn : chatapi.GetAllChats
+  })
+  console.log("🚀 ~ AIHelper ~ getAllChats:", getAllChats)
 
   const sendMessage = useMutation({
     mutationFn: chatapi.SendMessage,
@@ -42,6 +49,9 @@ export default function AIHelper() {
 
   return (
     <div className="flex flex-col relative h-[85vh] bg-gray-100 dark:bg-gray-900">
+      <div className="flex flex-col absolute left-0 rounded-r-2xl  h-full w-[200px] bg-gray-500 shadow-md">
+
+      </div>
     
       <div className="flex overflow-y-auto flex-col gap-2 p-4 space-y-3">
         {isLoading && <p className="text-gray-500">در حال بارگذاری...</p>}

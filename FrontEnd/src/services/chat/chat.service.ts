@@ -9,7 +9,7 @@ export class ChatAPI {
     async SendMessage(payload: IMessagePayload) {
       const token = Cookies.get("token-access");
       return await http.post(
-        "api/chat/send-message/",
+        "api/chat/all-chats/",
         payload,
         {
           headers: {
@@ -20,6 +20,15 @@ export class ChatAPI {
     }
   
     async ChatHistory() {
+      const token = Cookies.get("token-access");
+      const res = await http.get("api/chat/chat-history/", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return res.data;
+    }
+    async GetAllChats() {
       const token = Cookies.get("token-access");
       const res = await http.get("api/chat/chat-history/", {
         headers: {
