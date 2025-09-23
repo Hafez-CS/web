@@ -37,13 +37,18 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Django APPS
+    'chat_assistant',
+    'accounts',
+    'exam',
+    'platform_admin_module',
+
+    # ALL Packages
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    'chat_assistant',
-    'accounts',
     'drf_spectacular',
-    'exam',
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
