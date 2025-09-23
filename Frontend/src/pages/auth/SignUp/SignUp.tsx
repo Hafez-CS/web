@@ -21,12 +21,15 @@ export default function SignUp() {
       navigate("/login")
       toast.success("ثبت نام با موفقیت انجام شد");
     },
-    onError: (error: AxiosError<any>) => {
+    onError: (error: AxiosError<unknown>) => {
   console.log("🚀 ~ SignUp ~ error:", error);
-  const msguserName = error.response?.data?.errors?.username?.[0];
-  const msguserEmail = error.response?.data?.errors?.email?.[0];
-  toast.error(msguserName || null)
-  toast.error(msguserEmail || null)
+  if(error.code === "400"){
+    toast.error("ایمیل یا نام کاربری تکراریست!")
+  }
+  // const msguserName = error.response?.data?.errors?.username?.[0];
+  // const msguserEmail = error.response?.data?.errors?.email?.[0];
+  // toast.error(msguserName || null)
+  // toast.error(msguserEmail || null)
   
 }
 

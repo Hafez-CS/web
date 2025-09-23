@@ -21,9 +21,9 @@ export default function Profile() {
     navigate("/login")
   }
   console.log("🚀 ~ Profile ~ token_access:", token_access)
-  if(!token_access === undefined){
-    navigate("/login")
-  }
+  // if(!token_access === undefined){
+  //   navigate("/login")
+  // }
   
   const UpdateProfileInfo = useMutation({
     mutationFn: profileInfo.updateProfileInfoPUT,
@@ -65,19 +65,20 @@ export default function Profile() {
 
   return (
     <>
-      <div className="w-full h-full flex flex-col gap-5  justify-center items-center">
+      <div className="w-full h-full flex flex-col gap-5  justify-start items-center">
         <div className="w-full flex py-10 max-w-[1350px] justify-between items-center">
           <h1 className="font-bold text-2xl">مشخصات کاربری</h1>
           <Button onClick={() => setIsModalOpen(true)} type="primary">
             ویرایش
           </Button>
         </div>
-        <section className="w-full h-full max-w-[1440px] gap-3 grid grid-cols-1 md:grid-cols-2 p-5 dark:bg-gray-900 bg-gray-200 mt-20 rounded-md">
+        <section className="w-full  max-w-[1440px] gap-3 grid grid-cols-1 md:grid-cols-2 p-5 dark:bg-gray-900 bg-gray-200 mt-20 rounded-md">
           {dataList.map((item) => (
             <div
               key={item.id}
-              className="w-full min-w-[120px]   dark:bg-gray-700 bg-gray-300 rounded-md flex md:p-4 p-1 gap-x-2 items-center"
+              className="w-full min-w-[120px]   dark:bg-gray-700 bg-gray-300 h-[150px] rounded-md flex md:p-4 p-1 gap-x-2 items-center"
             >
+              
               <p className="text-[16px] text-black dark:text-white font-normal">{item.title}:</p>
               <span className="text-[20px] text-black dark:text-white font-black">{item.value}</span>
             </div>

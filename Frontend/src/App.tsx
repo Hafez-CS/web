@@ -12,7 +12,7 @@ import AIHelper from "./pages/Panel/AIHelper";
 import { useTheme } from "./context/ThemeContext";
 import { ConfigProvider, theme as antdTheme } from "antd";
 import "antd/dist/reset.css";
-import Exam from "./pages/Panel/Exam";
+// import Exam from "./pages/Panel/Exam";
 import ExamPage from "./pages/Panel/Exam";
 
 const App = () => {

@@ -9,7 +9,7 @@ export interface IMessagePayload {
 export class Exam {
   async GetExam(payload: string) {
     const token = Cookies.get("token-access");
-    return await http.get(
+    const res = await http.get(
       `api/exams/${payload}/`, 
       {
         headers: {
@@ -17,6 +17,7 @@ export class Exam {
         },
       }
     );
+    return res.data
   }
 
   async SendExam(payload: string) {
