@@ -8,11 +8,10 @@ from django.utils import timezone
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
 import uuid
-from openai import OpenAI 
-from django.conf import settings
+import re
+from .ai_client import send_to_ai
 from exam.models import Exam
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-import re
 
 QUESTIONS = [
     {
@@ -51,7 +50,6 @@ class NewChatRoomView(APIView):
         summary="ایجاد یک اتاق چت جدید",
         description="ایجاد یک اتاق چت برای کاربر لاگین‌شده با نام اختیاری",
     )
-
     def post(self, request):
         chat, _ = Chat.objects.get_or_create(user=request.user)
         name = request.data.get("name", "")
@@ -66,7 +64,6 @@ class ListChatRoomsView(APIView):
         summary="لیست اتاق‌های چت کاربر",
         description="بازگرداندن تمام اتاق‌های چت کاربر لاگین‌شده به ترتیب تاریخ ایجاد",
     )
-
     def get(self, request):
         rooms = ChatRoom.objects.filter(user=request.user).order_by('-created_at')
         serializer = ChatRoomSerializer(rooms, many=True)
@@ -111,9 +108,8 @@ class SendMessageView(APIView):
             400: {'type': 'object', 'properties': {'error': {'type': 'string'}}},
         },
         summary="ارسال پیام به اتاق چت",
-        description="ارسال پیام کاربر به اتاق چت و دریافت پاسخ از AI",
+        description="ارسال پیام کاربر به اتاق چت، دریافت پاسخ از AI، و به‌روزرسانی خلاصه اتاق",
     )
-
     def post(self, request, slug):
         room = get_object_or_404(ChatRoom, slug=slug, user=request.user)
         chat = room.chat
@@ -134,14 +130,22 @@ class SendMessageView(APIView):
 
         system_prompt = (
             "تو یک معلم حرفه‌ای و صبور هستی که توضیحات ساده و آموزشی به فارسی می‌دی. "
+            "تمام پیام‌های قبلی این مکالمه و خلاصه‌های اتاق‌های دیگر کاربر رو در نظر بگیر و پاسخ رو مرتبط با موضوع مکالمه نگه دار. "
             "اگه کاربر درخواست تحلیل آزمون کرد، اطلاعات آزمونش رو تحلیل کن و توضیح بده."
         )
 
         all_messages = chat.content or []
         room_messages = [m for m in all_messages if m.get("room") == room.slug]
 
+        summaries = chat.summary or {}
+        other_summaries = "\n".join([
+            f"خلاصه اتاق {room_slug}: {summary}"
+            for room_slug, summary in summaries.items()
+            if room_slug != room.slug
+        ]) or "هیچ خلاصه‌ای برای اتاق‌های دیگر موجود نیست."
+
         is_exam_analysis = re.search(r'\b(تحلیل|آزمون|بررسی)\b', message_text, re.IGNORECASE)
-        ai_message = ""
+        prompt = message_text
 
         if is_exam_analysis:
             exam_title = room.name.replace("کمک برای آزمون ", "")
@@ -149,37 +153,24 @@ class SendMessageView(APIView):
             if exam:
                 questions_str = "\n".join([f"سوال {q['id']}: {q['question_text']} (پاسخ درست: {q['correct_answer']})" for q in QUESTIONS])
                 prompt = (
-                    f"تو یک معلم حرفه‌ای و صبور هستی. کاربر '{request.user.username}' در آزمون '{exam_title}' شرکت کرده و {exam.score} از {len(QUESTIONS)} امتیاز گرفته. "
-                    f". سوال‌های آزمون:\n{questions_str}\n"
+                    f"کاربر '{request.user.username}' در آزمون '{exam_title}' شرکت کرده و {exam.score} از {len(QUESTIONS)} امتیاز گرفته. "
+                    f"سوال‌های آزمون:\n{questions_str}\n"
                     f"لطفاً تحلیل کن که کاربر در کدام سوال‌ها اشتباه کرده و توضیح ساده و آموزشی به فارسی بده که چطور می‌تونه ایراداتش رو برطرف کنه. "
                     f"اگه همه جواب‌ها درست بود، یه پیام تشویقی بنویس."
                 )
-            else:
-                prompt = "متأسفم، اطلاعات آزمون پیدا نشد. لطفاً دوباره تلاش کنید یا جزئیات بیشتری بدید."
-        else:
-            prompt = message_text
 
-        api_messages = [{"role": "system", "content": system_prompt}]
-        for msg in room_messages[-5:]:
+        api_messages = [
+            {
+                "role": "system",
+                "content": system_prompt + f"\nخلاصه‌های اتاق‌های دیگر کاربر:\n{other_summaries}"
+            }
+        ]
+        for msg in room_messages[-5:]:  
             role = "user" if msg.get("sender") == "user" else "assistant"
             api_messages.append({"role": role, "content": msg.get("message")})
         api_messages.append({"role": "user", "content": prompt})
 
-        client = OpenAI(
-            api_key=settings.OPENROUTER_API_KEY,
-            base_url="https://openrouter.ai/api/v1"
-        )
-        try:
-            response = client.chat.completions.create(
-                model="deepseek/deepseek-chat",
-                messages=api_messages,
-                stream=False,
-                temperature=0.7,
-                max_tokens=500
-            )
-            ai_message = response.choices[0].message.content
-        except Exception as e:
-            ai_message = f"خطا در ارتباط با AI: {str(e)}"
+        ai_message = send_to_ai(api_messages, system_prompt=system_prompt)
 
         ai_msg = {
             "id": str(uuid.uuid4()),
@@ -195,7 +186,19 @@ class SendMessageView(APIView):
                 chat.content = []
             chat.content.append(user_msg)
             chat.content.append(ai_msg)
-            chat.save(update_fields=["content", "updated_at"])
+
+            room_messages_updated = room_messages + [user_msg, ai_msg]
+            messages_str = "\n".join([f"{m['sender']}: {m['message']}" for m in room_messages_updated[-5:]])
+            summary_prompt = (
+                f"این تاریخچه مکالمات کاربر در اتاق {room.slug} است:\n{messages_str}\n"
+                f"لطفاً یک خلاصه کوتاه (2-3 جمله) از موضوع اصلی مکالمه بنویس که نشان‌دهنده علایق و نیازهای کاربر باشد."
+            )
+            ai_summary = send_to_ai([{"role": "user", "content": summary_prompt}], system_prompt="تو یک دستیار باهوش هستی که خلاصه‌های کوتاه و دقیق به فارسی می‌نویسی.")
+
+            if not isinstance(chat.summary, dict):
+                chat.summary = {}
+            chat.summary[room.slug] = ai_summary
+            chat.save(update_fields=["content", "summary", "updated_at"])
 
         return Response({
             "room": room.slug,
@@ -239,7 +242,6 @@ class ChatHistoryView(APIView):
         summary="دریافت تاریخچه چت",
         description="بازگرداندن پیام‌های یک اتاق چت با امکان فیلتر و صفحه‌بندی",
     )
-
     def get(self, request, slug):
         room = get_object_or_404(ChatRoom, slug=slug, user=request.user)
         chat = room.chat
@@ -252,7 +254,7 @@ class ChatHistoryView(APIView):
         except ValueError:
             limit = DEFAULT_LIMIT
         try:
-            offset = int(request.query_params.get("since", 0))
+            offset = int(request.query_params.get("offset", 0))
         except ValueError:
             offset = 0
 
@@ -289,3 +291,57 @@ class ChatContentView(APIView):
                 "updated_at": chat.updated_at,
             })
         return Response({"chats": data}, status=status.HTTP_200_OK)
+
+class SendAiForSummary(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='slug', type=str, location=OpenApiParameter.PATH, description='شناسه اتاق چت'),
+        ],
+        responses={
+            200: {
+                'type': 'object',
+                'properties': {
+                    'room': {'type': 'string', 'description': 'شناسه اتاق چت'},
+                    'summary': {'type': 'string', 'description': 'خلاصه مکالمات'},
+                },
+            },
+            400: {'type': 'object', 'properties': {'error': {'type': 'string'}}},
+            404: {'type': 'object', 'properties': {'error': {'type': 'string'}}},
+        },
+        summary="دریافت خلاصه مکالمات اتاق چت",
+        description="گرفتن تاریخچه پیام‌های یک اتاق چت، ارسال به AI برای خلاصه‌سازی، و ذخیره خلاصه در مدل Chat",
+    )
+    def get(self, request, slug):
+        room = get_object_or_404(ChatRoom, slug=slug, user=request.user)
+        chat = room.chat
+
+        all_messages = chat.content or []
+        room_messages = [m for m in all_messages if m.get("room") == room.slug]
+
+        if not room_messages:
+            return Response({
+                "error": "هیچ پیامی در این اتاق یافت نشد"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        messages_str = "\n".join([f"{m['sender']}: {m['message']}" for m in room_messages[-5:]])
+        system_prompt = "تو یک دستیار باهوش هستی که خلاصه‌های کوتاه و دقیق به فارسی می‌نویسی."
+        prompt = (
+            f"این تاریخچه مکالمات کاربر در اتاق {slug} است:\n{messages_str}\n"
+            f"لطفاً یک خلاصه کوتاه (2-3 جمله) از موضوع اصلی مکالمه بنویس که نشان‌دهنده علایق و نیازهای کاربر باشد."
+        )
+
+        ai_summary = send_to_ai([{"role": "user", "content": prompt}], system_prompt=system_prompt)
+
+        with transaction.atomic():
+            chat = Chat.objects.select_for_update().get(pk=chat.pk)
+            if not isinstance(chat.summary, dict):
+                chat.summary = {}
+            chat.summary[room.slug] = ai_summary
+            chat.save(update_fields=["summary", "updated_at"])
+
+        return Response({
+            "room": room.slug,
+            "summary": ai_summary
+        }, status=status.HTTP_200_OK)

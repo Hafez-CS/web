@@ -9,6 +9,7 @@ class Chat(models.Model):
     """
     user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='chat')
     content = models.JSONField(default=list)
+    summary = models.JSONField(default=dict)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
