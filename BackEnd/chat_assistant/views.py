@@ -13,21 +13,6 @@ from .ai_client import send_to_ai
 from exam.models import Exam
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
-QUESTIONS = [
-    {
-        "id": 1,
-        "question_text": "بزرگ‌ترین سیاره چیست؟",
-        "options": {"A": "مشتری", "B": "زحل", "C": "زمین", "D": "مریخ"},
-        "correct_answer": "A"
-    },
-    {
-        "id": 2,
-        "question_text": "ماه چند روزه دور زمین می‌چرخه؟",
-        "options": {"A": "14 روز", "B": "28 روز", "C": "30 روز", "D": "365 روز"},
-        "correct_answer": "B"
-    }
-]
-
 MAX_LIMIT = 1000
 DEFAULT_LIMIT = 100
 

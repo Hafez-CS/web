@@ -14,9 +14,8 @@ def send_exam_to_ai(payload: dict):
     title = payload.get("title")
     score = payload.get("score", 0)
     
-    # گرفتن تعداد سوالات از data.py
     exam = get_exam_by_slug(slug)
-    total_questions = len(exam["questions"]) if exam else 2  # مقدار پیش‌فرض 2 اگه آزمون پیدا نشد
+    total_questions = len(exam["questions"]) if exam else 2
 
     prompt = (
         f"کاربر با ایمیل '{user}' در آزمون '{title}' (شناسه: {slug}) شرکت کرده و {score} از {total_questions} امتیاز گرفته. "
