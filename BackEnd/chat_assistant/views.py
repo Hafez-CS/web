@@ -148,16 +148,19 @@ class SendMessageView(APIView):
         prompt = message_text
 
         if is_exam_analysis:
-            exam_title = room.name.replace("کمک برای آزمون ", "")
+            exam_title = room.name.replace("دستیار برای آزمون ", "")
             exam = Exam.objects.filter(user=request.user, title=exam_title).first()
-            if exam:
-                questions_str = "\n".join([f"سوال {q['id']}: {q['question_text']} (پاسخ درست: {q['correct_answer']})" for q in QUESTIONS])
+            exam_data = get_exam_by_slug(slug=exam.slug) if exam else None
+            if exam and exam_data:
+                questions_str = "\n".join([f"سوال {q['id']}: {q['text']} (پاسخ درست: {q['options'][q['answer']]})" for q in exam_data["questions"]])
                 prompt = (
-                    f"کاربر '{request.user.username}' در آزمون '{exam_title}' شرکت کرده و {exam.score} از {len(QUESTIONS)} امتیاز گرفته. "
+                    f"کاربر '{request.user.username}' در آزمون '{exam_title}' شرکت کرده و {exam.score} از {len(exam_data['questions'])} امتیاز گرفته. "
                     f"سوال‌های آزمون:\n{questions_str}\n"
                     f"لطفاً تحلیل کن که کاربر در کدام سوال‌ها اشتباه کرده و توضیح ساده و آموزشی به فارسی بده که چطور می‌تونه ایراداتش رو برطرف کنه. "
                     f"اگه همه جواب‌ها درست بود، یه پیام تشویقی بنویس."
                 )
+            else:
+                prompt = "آزمون یافت نشد. لطفاً اطلاعات آزمون را بررسی کنید."
 
         api_messages = [
             {

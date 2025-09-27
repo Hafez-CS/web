@@ -154,4 +154,5 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Api Key for Deepseek
-OPENROUTER_API_KEY = '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'
+OPENROUTER_API_KEY = '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'
+GROK_API_URL = "https://openrouter.ai/api/v1"
