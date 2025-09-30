@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'accounts',
     'exam',
     'platform_admin_module',
+    'consultation_module',
 
     # ALL Packages
     'rest_framework',

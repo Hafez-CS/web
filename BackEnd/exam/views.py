@@ -61,6 +61,7 @@ class StartExamView(APIView):
                 }
             }
         },
+        tags = ["Exam_module"],
         summary="شروع آزمون",
         description="دریافت اطلاعات آزمون شامل عنوان، اسلاگ و سوالات (بدون پاسخ درست) برای شروع آزمون."
     )
@@ -125,6 +126,7 @@ class SubmitExamView(APIView):
                 }
             }
         },
+        tags = ["Exam_module"],
         summary="ارسال پاسخ‌های آزمون",
         description="دریافت پاسخ‌های کاربر، محاسبه امتیاز، ذخیره نتیجه، ایجاد اتاق چت برای تحلیل، و بازگشت فیدبک AI."
     )

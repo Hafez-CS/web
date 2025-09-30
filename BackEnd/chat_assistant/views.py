@@ -11,7 +11,7 @@ import uuid
 import re
 from .ai_client import send_to_ai
 from exam.models import Exam
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 
 MAX_LIMIT = 1000
 DEFAULT_LIMIT = 100
@@ -32,6 +32,7 @@ class NewChatRoomView(APIView):
             201: ChatRoomSerializer,
             400: {'type': 'object', 'properties': {'error': {'type': 'string'}}},
         },
+        tags = ["Chat_module"],
         summary="ایجاد یک اتاق چت جدید",
         description="ایجاد یک اتاق چت برای کاربر لاگین‌شده با نام اختیاری",
     )
@@ -46,6 +47,7 @@ class ListChatRoomsView(APIView):
 
     @extend_schema(
         responses={200: ChatRoomSerializer(many=True)},
+        tags = ["Chat_module"],
         summary="لیست اتاق‌های چت کاربر",
         description="بازگرداندن تمام اتاق‌های چت کاربر لاگین‌شده به ترتیب تاریخ ایجاد",
     )
@@ -92,6 +94,7 @@ class SendMessageView(APIView):
             },
             400: {'type': 'object', 'properties': {'error': {'type': 'string'}}},
         },
+        tags = ["Chat_module"],
         summary="ارسال پیام به اتاق چت",
         description="ارسال پیام کاربر به اتاق چت، دریافت پاسخ از AI، و به‌روزرسانی خلاصه اتاق",
     )
@@ -227,6 +230,7 @@ class ChatHistoryView(APIView):
             },
             400: {'type': 'object', 'properties': {'error': {'type': 'string'}}},
         },
+        tags = ["Chat_module"],
         summary="دریافت تاریخچه چت",
         description="بازگرداندن پیام‌های یک اتاق چت با امکان فیلتر و صفحه‌بندی",
     )
@@ -269,6 +273,15 @@ class ChatHistoryView(APIView):
 class ChatContentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+
+    @extend_schema(
+        summary="لیست چت‌های کاربر فعلی",
+        description=(
+            "این endpoint تمام چت‌های متعلق به کاربر وارد‌شده را برمی‌گرداند.\n"
+            "خروجی به شکل یک آبجکت شامل کلید `chats` است که لیستی از چت‌ها دارد."
+        ),
+        tags=["Chat_module"]
+    )
     def get(self, request):
         chats = Chat.objects.filter(user=request.user)
         data = []
@@ -298,6 +311,7 @@ class SendAiForSummary(APIView):
             400: {'type': 'object', 'properties': {'error': {'type': 'string'}}},
             404: {'type': 'object', 'properties': {'error': {'type': 'string'}}},
         },
+        tags = ["Chat_module"],
         summary="دریافت خلاصه مکالمات اتاق چت",
         description="گرفتن تاریخچه پیام‌های یک اتاق چت، ارسال به AI برای خلاصه‌سازی، و ذخیره خلاصه در مدل Chat",
     )

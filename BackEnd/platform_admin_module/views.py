@@ -7,7 +7,7 @@ from drf_spectacular.utils import extend_schema
 # Create your views here.
 
 @extend_schema(
-    tags=["Consultants"],
+    tags=["Consultants_admin_platform_module"],
     description="لیست یا ایجاد مشاور جدید (فقط مدیر پلتفرم دسترسی دارد)."
 )
 class ConsultantListCreateView(generics.ListCreateAPIView):
@@ -21,7 +21,7 @@ class ConsultantListCreateView(generics.ListCreateAPIView):
 
 
 @extend_schema(
-    tags=["Consultants"],
+    tags=["Consultants_admin_platform_module"],
     description="دریافت، ویرایش یا حذف مشاور (فقط مدیر پلتفرم دسترسی دارد)."
 )
 class ConsultantRetrieveUpdateOrDeleteView(generics.RetrieveUpdateDestroyAPIView):
@@ -31,7 +31,7 @@ class ConsultantRetrieveUpdateOrDeleteView(generics.RetrieveUpdateDestroyAPIView
 
 
 @extend_schema(
-    tags=["SchoolAdmins"],
+    tags=["SchoolAdmins_admin_platform_module"],
     description="لیست یا ایجاد مدیر مجموعه (فقط مدیر پلتفرم دسترسی دارد)."
 )
 class SchoolAdminListCreateView(generics.ListCreateAPIView):
@@ -45,7 +45,7 @@ class SchoolAdminListCreateView(generics.ListCreateAPIView):
 
 
 @extend_schema(
-    tags=["SchoolAdmins"],
+    tags=["SchoolAdmins_admin_platform_module"],
     description="دریافت، ویرایش یا حذف مدیر مجموعه (فقط مدیر پلتفرم دسترسی دارد)."
 )
 class SchoolAdminRetrieveUpdateOrDeleteView(generics.RetrieveUpdateDestroyAPIView):

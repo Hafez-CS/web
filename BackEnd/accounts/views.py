@@ -6,11 +6,27 @@ from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from django.contrib.auth import authenticate
 from .models import UserProfile
 from .serializers import UserSerializer, RegisterSerializer
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
+from .serializers_docs import (
+    LoginRequestSerializer, LoginResponseSerializer,
+    LogoutRequestSerializer, GenericMessageSerializer
+)
 
 
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        summary="ورود کاربر",
+        description="با ارسال ایمیل و رمز عبور توکن دسترسی و رفرش برمی‌گرداند.",
+        request=LoginRequestSerializer,
+        responses={
+            200: OpenApiResponse(LoginResponseSerializer, description="ورود موفق"),
+            400: OpenApiResponse(GenericMessageSerializer, description="ایمیل یا پسورد داده نشده"),
+            401: OpenApiResponse(GenericMessageSerializer, description="اطلاعات ورود نادرست")
+        },
+        tags=["Auth-accounts_module"]
+    )
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
@@ -44,6 +60,16 @@ class RegisterView(generics.CreateAPIView):
     queryset = UserProfile.objects.all()
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        summary="ثبت‌نام کاربر",
+        description="کاربر جدید را ایجاد می‌کند.",
+        request=RegisterSerializer,
+        responses={
+            201: OpenApiResponse(RegisterSerializer, description="ثبت‌نام موفق"),
+            400: OpenApiResponse(GenericMessageSerializer, description="خطای اعتبارسنجی")
+        },
+        tags=["Auth-accounts_module"]
+    )
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         try:
@@ -78,9 +104,22 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        summary="نمایش پروفایل",
+        description="اطلاعات پروفایل کاربر لاگین‌شده را نمایش می‌دهد.",
+        responses={200: UserSerializer},
+        tags=["User-accounts_module"]
+    )
     def get_object(self):
         return self.request.user
 
+    @extend_schema(
+        summary="ویرایش پروفایل",
+        description="پروفایل کاربر لاگین‌شده را بروزرسانی می‌کند.",
+        request=UserSerializer,
+        responses={200: UserSerializer},
+        tags=["User-accounts_module"]
+    )
     def update(self, request, *args, **kwargs):
         user = self.get_object()
         serializer = self.get_serializer(
@@ -107,6 +146,12 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 class DeleteUserView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        summary="حذف حساب کاربری",
+        description="اکانت کاربر فعلی را حذف می‌کند.",
+        responses={204: None, 401: GenericMessageSerializer},
+        tags=["User-accounts_module"]
+    )
     def delete(self, request):
         user = request.user
         user.delete()
@@ -115,6 +160,16 @@ class DeleteUserView(APIView):
 class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        summary="خروج کاربر",
+        description="رفرش توکن کاربر را بلاک می‌کند و عملاً او را خارج می‌نماید.",
+        request=LogoutRequestSerializer,
+        responses={
+            200: GenericMessageSerializer,
+            400: GenericMessageSerializer
+        },
+        tags=["Auth-accounts_module"]
+    )
     def post(self, request):
         refresh_token = request.data.get("refresh")
         if not refresh_token:
