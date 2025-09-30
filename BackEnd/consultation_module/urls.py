@@ -6,15 +6,19 @@ from .views import (
     ReserveConsultationView,
     MyReservationsView,
     MyCompletedReservationsView,
-    CompleteReservationView,
+    CompleteByUserView,
+    CompleteByConsultantView,
+    ConsultantAvailableTimesView
 )
 
 urlpatterns = [
-    path("consultations/free-code/", FreeConsultationCodeView.as_view()),
-    path("consultations/single-times/", SingleConsultationTimesView.as_view()),
-    path("consultations/package-consultants/", PackageConsultantsView.as_view()),
-    path("consultations/reserve/", ReserveConsultationView.as_view()),
-    path("consultations/my-reservations/", MyReservationsView.as_view()),
-    path("consultations/my-completed/", MyCompletedReservationsView.as_view()),
-    path("consultations/complete/<int:pk>/", CompleteReservationView.as_view()),
+    path("free-code/", FreeConsultationCodeView.as_view(), name="free-consultation-code"),
+    path("single-times/", SingleConsultationTimesView.as_view(), name="single-times"),
+    path("consultant/<int:consultant_id>/times/", ConsultantAvailableTimesView.as_view(), name="consultant-available-times"),
+    path("package-consultants/", PackageConsultantsView.as_view(), name="package-consultants"),
+    path("reserve/", ReserveConsultationView.as_view(), name="reserve-consultation"),
+    path("my-reservations/", MyReservationsView.as_view(), name="my-reservations"),
+    path("my-completed/", MyCompletedReservationsView.as_view(), name="my-completed"),
+    path("complete/<int:pk>/", CompleteByUserView.as_view(), name="complete-by-user"),
+    path("complete-by-consultant/<int:pk>/", CompleteByConsultantView.as_view(), name="complete-by-consultant"),
 ]
