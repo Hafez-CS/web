@@ -11,6 +11,7 @@ from .serializers_docs import (
     LoginRequestSerializer, LoginResponseSerializer,
     LogoutRequestSerializer, GenericMessageSerializer
 )
+from rest_framework.exceptions import PermissionDenied
 
 
 class LoginView(APIView):
@@ -54,7 +55,6 @@ class LoginView(APIView):
             }
         }, status=status.HTTP_200_OK)
 
-
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     queryset = UserProfile.objects.all()
@@ -74,31 +74,54 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         try:
             serializer.is_valid(raise_exception=True)
+
             username = serializer.validated_data.get('username')
             email = serializer.validated_data.get('email')
+            role = serializer.validated_data.get('role', 'normal')  # نقش درخواستی
+
+            # کنترل یونیک بودن username و email
             if UserProfile.objects.filter(username=username).exists():
                 return Response({
                     "detail": "نام کاربری قبلاً ثبت شده است."
                 }, status=status.HTTP_400_BAD_REQUEST)
+
             if UserProfile.objects.filter(email=email).exists():
                 return Response({
                     "detail": "ایمیل قبلاً ثبت شده است."
                 }, status=status.HTTP_400_BAD_REQUEST)
+
+            # کنترل سطح دسترسی برای نقش‌ها
+            if role == 'consultant' and not (
+                request.user.is_authenticated and request.user.role == 'platform_admin'
+            ):
+                raise PermissionDenied("فقط مدیر پلتفرم می‌تواند مشاور ایجاد کند.")
+
+            if role == 'platform_admin':
+                raise PermissionDenied("امکان ایجاد مدیر پلتفرم وجود ندارد.")
+
+            # ذخیره‌سازی
             self.perform_create(serializer)
+
             return Response({
                 "success": True,
                 "message": "ثبت‌نام با موفقیت انجام شد.",
                 "data": serializer.data
             }, status=status.HTTP_201_CREATED)
+
         except ValidationError as e:
             return Response({
                 "detail": e.detail
             }, status=status.HTTP_400_BAD_REQUEST)
+
+        except PermissionDenied as e:
+            return Response({
+                "detail": str(e)
+            }, status=status.HTTP_403_FORBIDDEN)
+
         except Exception as e:
             return Response({
                 "detail": f"خطایی رخ داد: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 class ProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
@@ -141,7 +164,6 @@ class ProfileView(generics.RetrieveUpdateAPIView):
             return Response({
                 "detail": f"خطایی رخ داد: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 class DeleteUserView(APIView):
     permission_classes = [permissions.IsAuthenticated]

@@ -1,6 +1,6 @@
 from rest_framework import generics
 from accounts.models import UserProfile
-from accounts.serializers import UserSerializer
+from accounts.serializers import UserCreateByAdminSerializer, UserSerializer
 from accounts.permissions import IsPlatformAdmin
 from drf_spectacular.utils import extend_schema
 
@@ -12,11 +12,10 @@ from drf_spectacular.utils import extend_schema
 )
 class ConsultantListCreateView(generics.ListCreateAPIView):
     queryset = UserProfile.objects.filter(role='consultant')
-    serializer_class = UserSerializer
+    serializer_class = UserCreateByAdminSerializer
     permission_classes = [IsPlatformAdmin]
 
     def perform_create(self, serializer):
-        # 🔒 نقش همیشه consultant باشد
         serializer.save(role="consultant")
 
 
@@ -36,11 +35,10 @@ class ConsultantRetrieveUpdateOrDeleteView(generics.RetrieveUpdateDestroyAPIView
 )
 class SchoolAdminListCreateView(generics.ListCreateAPIView):
     queryset = UserProfile.objects.filter(role='school_admin')
-    serializer_class = UserSerializer
+    serializer_class = UserCreateByAdminSerializer
     permission_classes = [IsPlatformAdmin]
 
     def perform_create(self, serializer):
-        # 🔒 نقش همیشه school_admin باشد
         serializer.save(role="school_admin")
 
 
