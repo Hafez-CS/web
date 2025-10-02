@@ -12,13 +12,14 @@ class Consultant(models.Model):
         return self.user.username
     
 class ConsultationTime(models.Model):
-    consultant = models.ForeignKey(Consultant, on_delete=models.CASCADE, related_name="times")
+    consultant = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="available_times")
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     is_reserved = models.BooleanField(default=False)
 
-    def __str__(self):
-        return f"{self.consultant.user.username} - {self.start_time}"
+    def can_edit(self):
+        """مشاور فقط تا یک هفته قبل از شروع جلسه می‌تواند تغییر دهد یا حذف کند"""
+        return (self.start_time - timezone.now()).days >= 7
 
 
 class Reservation(models.Model):

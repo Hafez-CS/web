@@ -8,7 +8,10 @@ from .views import (
     MyCompletedReservationsView,
     CompleteByUserView,
     CompleteByConsultantView,
-    ConsultantAvailableTimesView
+    ConsultantAvailableTimesView,
+    ConsultantTimeListCreateView,
+    ConsultantTimeUpdateDeleteView,
+    SingleConsultantsWithTimesView
 )
 
 urlpatterns = [
@@ -21,4 +24,8 @@ urlpatterns = [
     path("my-completed/", MyCompletedReservationsView.as_view(), name="my-completed"),
     path("complete/<int:pk>/", CompleteByUserView.as_view(), name="complete-by-user"),
     path("complete-by-consultant/<int:pk>/", CompleteByConsultantView.as_view(), name="complete-by-consultant"),
+    path("consultant/times/", ConsultantTimeListCreateView.as_view(), name="consultant-time-list-create"),
+    path("consultant/times/<int:pk>/", ConsultantTimeUpdateDeleteView.as_view(), name="consultant-time-update-delete"),
+    path("single-consultants/", SingleConsultantsWithTimesView.as_view(),name="single-consultants-with-times",
+),
 ]

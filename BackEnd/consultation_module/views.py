@@ -8,10 +8,10 @@ from accounts.permissions import IsConsultant, IsNormalUser
 from .models import Consultant, ConsultationTime, Reservation
 from .serializers import (
     ConsultantSerializer,
-    ConsultationTimeSerializer,
+    ConsultantManageTimeSerializer,
     ReservationSerializer,
-    ReservationCreateSerializer,
     FreeConsultationCodeSerializer,
+    ConsultantWithTimesSerializer
 )
 
 
@@ -33,10 +33,10 @@ class FreeConsultationCodeView(views.APIView):
 @extend_schema(
     tags = ["Consultation_module"],
     summary="لیست تمام مشاورانی که تایم تک جلسه ای دارن",
-    responses=ConsultationTimeSerializer(many=True),
+    responses=ConsultantManageTimeSerializer(many=True),
 )
 class SingleConsultationTimesView(generics.ListAPIView):
-    serializer_class = ConsultationTimeSerializer
+    serializer_class = ConsultantManageTimeSerializer
     permission_classes = [IsNormalUser]
 
     def get_queryset(self):
@@ -61,49 +61,53 @@ class PackageConsultantsView(generics.ListAPIView):
 @extend_schema(
     summary="Reserve consultation (FREE, SINGLE, PACKAGE)",
     tags=["Consultation_module"],
-    request=ReservationCreateSerializer,
+    request=ReservationSerializer,
     responses=ReservationSerializer,
 )
 class ReserveConsultationView(views.APIView):
     def post(self, request):
-        serializer = ReservationCreateSerializer(data=request.data)
+        serializer = ReservationSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        consultant = get_object_or_404(Consultant, id=data["consultant_id"])
+        consultant = data["consultant"]
+        res_type = data["type"]
 
         # 🚨 محدودیت: هر کاربر فقط یکبار جلسه رایگان
-        if data["type"] == "FREE":
+        if res_type == "FREE":
             if Reservation.objects.filter(user=request.user, type="FREE").exists():
                 return Response(
                     {"detail": "شما قبلاً یک جلسه رایگان استفاده کرده‌اید."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            # 🚨 فقط تک جلسه‌ای مجاز است
-            if "time_id" not in data:
+            # 🚨 برای مشاوره رایگان فقط یک تایم مجاز است
+            if not data.get("times") or len(data.get("times")) != 1:
                 return Response(
-                    {"detail": "برای مشاوره رایگان باید یک زمان مشخص کنید."},
+                    {"detail": "برای مشاوره رایگان باید دقیقاً یک زمان انتخاب کنید."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+        # 🟢 ایجاد رزرو
         reservation = Reservation.objects.create(
-            user=request.user, consultant=consultant, type=data["type"]
+            user=request.user,
+            consultant=consultant,
+            type=res_type,
         )
 
-        # ✅ جلسه تک یا رایگان
-        if data["type"] in ["SINGLE", "FREE"]:
-            time = get_object_or_404(
-                ConsultationTime,
-                id=data["time_id"],
-                consultant=consultant,
-                is_reserved=False,
-            )
-            time.is_reserved = True
-            time.save()
-            reservation.times.add(time)
+        # ✅ جلسه تک یا رایگان → استفاده از time_ids
+        if res_type in ["SINGLE", "FREE"]:
+            for t in data.get("times", []):
+                if t.consultant != consultant or t.is_reserved:
+                    return Response(
+                        {"detail": "این زمان معتبر نیست یا قبلاً رزرو شده است."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                t.is_reserved = True
+                t.save()
+                reservation.times.add(t)
 
-        # ✅ جلسه پکیج (۵ جلسه پشت سر هم)
-        elif data["type"] == "PACKAGE":
+        # ✅ جلسه پکیج → ۵ تایم آزاد بعدی
+        elif res_type == "PACKAGE":
             free_times = consultant.times.filter(is_reserved=False).order_by("start_time")[:5]
             if free_times.count() < 5:
                 return Response(
@@ -116,7 +120,8 @@ class ReserveConsultationView(views.APIView):
                 reservation.times.add(t)
 
         return Response(
-            ReservationSerializer(reservation).data, status=status.HTTP_201_CREATED
+            ReservationSerializer(reservation).data,
+            status=status.HTTP_201_CREATED
         )
 
 
@@ -173,7 +178,7 @@ class CompleteByUserView(views.APIView):
 # ✅ اتمام جلسه توسط مشاور
 @extend_schema(
     summary="اتمام مشاوره توسط مشاور",
-    tags=["Consultation_module"],
+    tags=["Consultant Times"],
     description="مشاور می‌تواند جلسه‌ای که دارد را به حالت اتمام بگذارد. بعد از تایید کاربر هم، جلسه به لیست اتمام‌شده منتقل می‌شود.",
     responses={200: ReservationSerializer},
 )
@@ -188,12 +193,12 @@ class CompleteByConsultantView(views.APIView):
 
 @extend_schema(
     summary="لیست تایم‌های آزاد یک مشاور",
-    tags=["Consultation_module"],
+    tags=["Consultant Times"],
     description="تمام تایم‌های آزاد (تاریخ و ساعت) یک مشاور برگردانده می‌شود.",
-    responses=ConsultationTimeSerializer,
+    responses=ConsultantManageTimeSerializer,
 )
 class ConsultantAvailableTimesView(generics.ListAPIView):
-    serializer_class = ConsultationTimeSerializer
+    serializer_class = ConsultantManageTimeSerializer
     permission_classes = [IsNormalUser]
 
     def get_queryset(self):
@@ -201,3 +206,64 @@ class ConsultantAvailableTimesView(generics.ListAPIView):
         return ConsultationTime.objects.filter(
             consultant_id=consultant_id, is_reserved=False
         ).order_by("start_time")
+
+@extend_schema(
+    tags=["Consultant Times"],
+    description="مشاور می‌تواند تایم‌های آزاد خودش را مدیریت کند (افزودن، لیست کردن)."
+)
+class ConsultantTimeListCreateView(generics.ListCreateAPIView):
+    serializer_class = ConsultantManageTimeSerializer
+    permission_classes = [IsConsultant]
+
+    def get_queryset(self):
+        return ConsultationTime.objects.filter(consultant=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(consultant=self.request.user)
+
+
+@extend_schema(
+    tags=["Consultant Times"],
+    description="ویرایش یا حذف تایم مشاور (فقط اگر حداقل ۷ روز تا جلسه مانده باشد)."
+)
+class ConsultantTimeUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = ConsultantManageTimeSerializer
+    permission_classes = [IsConsultant]
+
+    def get_queryset(self):
+        return ConsultationTime.objects.filter(consultant=self.request.user)
+
+    def perform_update(self, serializer):
+        obj = self.get_object()
+        if not obj.can_edit():
+            raise PermissionError("شما فقط تا ۷ روز قبل از جلسه می‌توانید تغییر دهید.")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if not instance.can_edit():
+            raise PermissionError("شما فقط تا ۷ روز قبل از جلسه می‌توانید حذف کنید.")
+        instance.delete()
+
+@extend_schema(
+    summary="List consultants with available times for SINGLE sessions",
+    tags=["Consultation_module"],
+    responses=ConsultantWithTimesSerializer(many=True),
+)
+class SingleConsultantsWithTimesView(views.APIView):
+    def get(self, request):
+        consultants = Consultant.objects.filter(
+            times__is_reserved=False
+        ).distinct()
+
+        # هر مشاور فقط تایم‌های آزادش رو نشون بدیم
+        data = []
+        for consultant in consultants:
+            free_times = consultant.times.filter(is_reserved=False).order_by("start_time")
+            data.append(
+                ConsultantWithTimesSerializer(
+                    consultant,
+                    context={"times": free_times}
+                ).data
+            )
+
+        return Response(data)
