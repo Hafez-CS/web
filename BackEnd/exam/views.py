@@ -190,3 +190,28 @@ class SubmitExamView(APIView):
             "chatroom_slug": room.slug,
             "ai_feedback": ai_message
         })
+    
+class ListExamsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        responses={
+            200: {
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'title': {'type': 'string', 'description': 'عنوان آزمون'},
+                        'slug': {'type': 'string', 'description': 'شناسه آزمون'}
+                    }
+                },
+                'description': 'لیست تمام آزمون‌های موجود'
+            }
+        },
+        tags=["Exam_module"],
+        summary="لیست همه آزمون‌ها",
+        description="این API لیست تمام آزمون‌های موجود (عنوان و اسلاگ) را برمی‌گرداند."
+    )
+    def get(self, request):
+        exams = [{"title": e["title"], "slug": e["slug"]} for e in EXAMS]
+        return Response(exams, status=status.HTTP_200_OK)
