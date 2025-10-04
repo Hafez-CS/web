@@ -14,6 +14,7 @@ import { ConfigProvider, theme as antdTheme } from "antd";
 import "antd/dist/reset.css";
 // import Exam from "./pages/Panel/Exam";
 import ExamPage from "./pages/Panel/Exam";
+import Request from "./pages/Panel/reception/receptionRequest";
 
 const App = () => {
   const queryClient = new QueryClient();
@@ -40,7 +41,11 @@ const App = () => {
                   <Route path=":id" element={<AIHelper />} />
                 </Route>
                 <Route index path="/exams" element={<ExamPage />} />
-                <Route index path="/assistant" element={<Reception />} />
+                <Route path="/assistant">
+  <Route path="request" element={<Request />} />
+  <Route path="received" element={<Reception />} />
+  <Route path="completed" element={<Reception />} />
+</Route>
                 <Route index path="/setting" element={<Setting />} />
               </Route>
               <Route path="/login" element={<Login />} />
