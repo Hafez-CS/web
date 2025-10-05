@@ -1,86 +1,183 @@
 from django.db import models
-from accounts.models import UserProfile
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-# Create your models here.
 
-class Consultant(models.Model):
-    user = models.OneToOneField(
-        UserProfile,
-        on_delete=models.CASCADE,
-        limit_choices_to={"role": "consultant"},
-        related_name="consultant_profile"  # 👈 پیشنهاد اضافه کردن related_name
-    )
-    bio = models.TextField(blank=True, null=True)
-
-    def __str__(self):
-        return self.user.username
+class ConsultationType(models.TextChoices):
+    SINGLE = 'single', 'تک جلسه‌ای'
+    PACKAGE = 'package', 'پکیج (۵ جلسه)'
 
 
-class ConsultationTime(models.Model):
+class ConsultationStatus(models.TextChoices):
+    PENDING = 'pending', 'در انتظار'
+    CONFIRMED = 'confirmed', 'تأیید شده'
+    COMPLETED = 'completed', 'تمام شده'
+    CANCELLED = 'cancelled', 'لغو شده'
+
+
+class ConsultantSchedule(models.Model):
+    """زمان‌بندی مشاور"""
     consultant = models.ForeignKey(
-        Consultant,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="times"
+        related_name='schedules',
+        limit_choices_to={'role': 'consultant'}
     )
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
-    is_reserved = models.BooleanField(default=False)
-
-    def clean(self):
-        from django.core.exceptions import ValidationError
-        if self.end_time <= self.start_time:
-            raise ValidationError("end_time باید بعد از start_time باشد.")
-
-    def can_edit(self):
-        """مشاور فقط تا یک هفته قبل از شروع جلسه می‌تواند تغییر دهد یا حذف کند"""
-        return (self.start_time - timezone.now()).days >= 7
+    day_of_week = models.IntegerField(
+        choices=[(i, ['دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه', 'یکشنبه'][i]) for i in range(7)]
+    )
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    is_available = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        unique_together = ['consultant', 'day_of_week', 'start_time']
+        ordering = ['day_of_week', 'start_time']
         indexes = [
-            models.Index(fields=["consultant", "start_time"]),
+            models.Index(fields=['consultant', 'is_available']),
         ]
-        ordering = ["start_time"]  # 👈 مرتب‌سازی پیش‌فرض
+        verbose_name = 'زمان‌بندی مشاور'
+        verbose_name_plural = 'زمان‌بندی‌های مشاوران'
 
-
-
-class Reservation(models.Model):
-    TYPE_CHOICES = (
-        ("FREE", "Free"),
-        ("SINGLE", "Single"),
-        ("PACKAGE", "Package"),
-    )
-    STATUS_CHOICES = (
-        ("PENDING", "Pending"),
-        ("CONFIRMED", "Confirmed"),
-        ("CANCELLED", "Cancelled"),
-        ("COMPLETED", "Completed"),
-    )
-
-    user = models.ForeignKey(
-        UserProfile,
-        on_delete=models.CASCADE,
-        related_name="reservations"
-    )
-    consultant = models.ForeignKey(
-        Consultant,
-        on_delete=models.CASCADE,
-        related_name="reservations"
-    )
-    type = models.CharField(max_length=10, choices=TYPE_CHOICES)
-    times = models.ManyToManyField(
-        ConsultationTime,
-        related_name="reservations",
-        blank=True  # 👈 بهتره رزرو ساخته بشه حتی قبل از انتخاب تایم
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="PENDING")
-
-    is_completed_by_user = models.BooleanField(default=False)
-    is_completed_by_consultant = models.BooleanField(default=False)
-
-    def is_fully_completed(self):
-        return self.is_completed_by_user and self.is_completed_by_consultant
+    def clean(self):
+        if self.start_time >= self.end_time:
+            raise ValidationError("زمان پایان باید بعد از زمان شروع باشد")
 
     def __str__(self):
-        return f"Reservation: {self.user.username} → {self.consultant.user.username} ({self.type})"
+        days = ['دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه', 'یکشنبه']
+        return f"{self.consultant.get_full_name()} - {days[self.day_of_week]}: {self.start_time}-{self.end_time}"
+
+
+class Consultation(models.Model):
+    """رزرو مشاوره"""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='consultations',
+        limit_choices_to={'role': 'normal'}
+    )
+    consultant = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='consultant_sessions',
+        limit_choices_to={'role': 'consultant'}
+    )
+    consultation_type = models.CharField(
+        max_length=10,
+        choices=ConsultationType.choices,
+        default=ConsultationType.SINGLE
+    )
+    scheduled_date = models.DateField()
+    scheduled_time = models.TimeField()
+    status = models.CharField(
+        max_length=10,
+        choices=ConsultationStatus.choices,
+        default=ConsultationStatus.CONFIRMED
+    )
+    package_group = models.CharField(max_length=100, null=True, blank=True)
+    session_number = models.IntegerField(default=1)
+    
+    # ردیابی تکمیل
+    user_completed = models.BooleanField(default=False)
+    consultant_completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    # کد تخفیف
+    discount_code = models.CharField(max_length=50, null=True, blank=True)
+    discount_amount = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-scheduled_date', '-scheduled_time']
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['consultant', 'status']),
+            models.Index(fields=['package_group']),
+            models.Index(fields=['scheduled_date', 'scheduled_time']),
+        ]
+        verbose_name = 'مشاوره'
+        verbose_name_plural = 'مشاوره‌ها'
+
+    def mark_completed_by_user(self):
+        self.user_completed = True
+        self._check_completion()
+        self.save()
+
+    def mark_completed_by_consultant(self):
+        self.consultant_completed = True
+        self._check_completion()
+        self.save()
+        
+    def _check_completion(self):
+        if self.user_completed and self.consultant_completed and not self.completed_at:
+            self.status = ConsultationStatus.COMPLETED
+            self.completed_at = timezone.now()
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} با {self.consultant.get_full_name()} در {self.scheduled_date}"
+
+
+class FreeConsultationCoupon(models.Model):
+    """کوپن مشاوره رایگان یکبار مصرف"""
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='free_coupon'
+    )
+    code = models.CharField(max_length=50, unique=True)
+    used = models.BooleanField(default=False)
+    used_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'کوپن رایگان'
+        verbose_name_plural = 'کوپن‌های رایگان'
+
+    def use_coupon(self):
+        if self.used:
+            raise ValidationError("کوپن قبلاً استفاده شده است")
+        self.used = True
+        self.used_at = timezone.now()
+        self.save()
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} - {self.code}"
+    
+class ConsultantAvailableDate(models.Model):
+    """تایم‌های خاص مشاور بر اساس تاریخ"""
+    consultant = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='available_dates',
+        limit_choices_to={'role': 'consultant'}
+    )
+    date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    is_available = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['consultant', 'date', 'start_time']
+        ordering = ['date', 'start_time']
+        indexes = [
+            models.Index(fields=['consultant', 'is_available', 'date']),
+        ]
+        verbose_name = 'تاریخ آزاد مشاور'
+        verbose_name_plural = 'تاریخ‌های آزاد مشاوران'
+
+    def clean(self):
+        if self.start_time >= self.end_time:
+            raise ValidationError("زمان پایان باید بعد از زمان شروع باشد")
+        
+        if self.date < timezone.now().date():
+            raise ValidationError("نمی‌توانید برای گذشته تایم تعریف کنید")
+
+    def __str__(self):
+        return f"{self.consultant.get_full_name()} - {self.date} ({self.start_time}-{self.end_time})"
