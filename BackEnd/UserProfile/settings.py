@@ -61,6 +61,16 @@ REST_FRAMEWORK = {
     )
 }
 
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=6),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": True,
+}
+
+
 AUTH_USER_MODEL = 'accounts.UserProfile'
 
 SPECTACULAR_SETTINGS = {

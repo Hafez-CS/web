@@ -1,61 +1,50 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Cookies from "js-cookie";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  chatapi,
-  type sendMessagedto,
-} from "../../../services/chat/chat.service";
-import { Button, Form, Input, Modal } from "antd";
-
+import { chatapi, type sendMessagedto } from "../../../services/chat/chat.service";
+import { Button, Form, Input, Modal, Spin } from "antd";
 import { toast } from "react-toastify";
-import type {
-  IChatResponse,
-  IModal,
-  Irooms,
-  ISendmessageResponse,
-} from "./@types";
+import type { IChatResponse, IModal, Irooms, ISendmessageResponse } from "./@types";
+import { PlusCircleOutlined, SendOutlined } from "@ant-design/icons";
 
 export default function AIHelper() {
   const { id } = useParams();
-  // const [slug , setSlug] = useState<string | null>(null)
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const [form] = Form.useForm();
   const navigate = useNavigate();
-
-  console.log("🚀 ~ AIHelper ~ id:", id || "no slug");
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const token = Cookies.get("token-access");
     if (!token) navigate("/login");
   }, [navigate]);
+
   useEffect(() => {
     setMessage("");
     queryClient.invalidateQueries({ queryKey: ["ChatMessages", id] });
   }, [id]);
 
-  const { data: rooms } = useQuery<Irooms[]>({
+  const { data: rooms, isLoading: roomsLoading } = useQuery<Irooms[]>({
     queryKey: ["rooms"],
     queryFn: chatapi.rooms,
   });
-  console.log("🚀 ~ AIHelper ~ rooms:", rooms);
-  const { data: ChatHistoryBySlug } = useQuery<IChatResponse>({
-    queryKey: ["ChatMessages" , id],
+
+  const { data: ChatHistoryBySlug, isLoading: chatLoading } = useQuery<IChatResponse>({
+    queryKey: ["ChatMessages", id],
     queryFn: () => chatapi.ChatHistory(id || "test"),
     enabled: !!id,
   });
 
-  console.log("🚀 ~ AIHelper ~ getAllChats:", ChatHistoryBySlug);
-
   const new_room = useMutation({
     mutationFn: chatapi.new_room,
     onSuccess: (data: ISendmessageResponse) => {
-      console.log("🚀 ~ AIHelper ~ data:", data);
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
       navigate(`/helper/${data.slug}`);
-
       toast.success("چت جدید با موفقیت ساخته شد");
+      setIsModalOpen(false);
     },
     onError: (err) => {
       toast.error(err.message || "خطا در ساخت چت جدید!");
@@ -64,144 +53,176 @@ export default function AIHelper() {
 
   const sendMessageBySlug = useMutation({
     mutationFn: (payload: sendMessagedto) => chatapi.SendMessage(payload),
-    onSuccess: (data) => {
-      console.log("🚀 پیام ارسال شد:", data);
-      toast.success("پیام با موئفقیت ارسال شد");
+    onSuccess: () => {
+      toast.success("پیام با موفقیت ارسال شد");
       queryClient.invalidateQueries({ queryKey: ["ChatMessages", id] });
+      form.resetFields();
       setMessage("");
     },
     onError: () => {
-      toast.error("خطا");
+      toast.error("خطا در ارسال پیام!");
     },
   });
 
-  const handleSetNewRoom = (data: IModal) => {
-    console.log("🚀 ~ handleSetNewRoom ~ data:", data);
-    new_room.mutate(data.name);
+  const handleSetNewRoom = (values: IModal) => {
+    new_room.mutate(values.name);
   };
+
   const handleSend = (values: { content: string }) => {
     if (!values.content.trim()) return;
-    setMessage(values.content);
     sendMessageBySlug.mutate({
       slug: id || "test",
       message: values.content,
     });
   };
 
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [ChatHistoryBySlug]);
+
   return (
-    <div className="flex flex-col relative h-[85vh] bg-gray-100 dark:bg-gray-900">
-      <div className="flex flex-col absolute  gap-1 left-0 rounded-r-2xl py-5 px-2 h-full w-[200px] bg-gray-300 shadow-md">
-        <h1 className="font-semibold justify-center items-center flex bg-primary rounded-md text-white p-2 text-[16px]">
-          لیست چت ها
+    <div className="flex h-[85vh] bg-gray-100 dark:bg-gray-900 rounded-2xl shadow-inner overflow-hidden">
+
+      <div className="flex flex-col items-center gap-3 p-3 w-[230px] bg-gray-200 dark:bg-gray-800 shadow-lg">
+        <h1 className="font-semibold text-lg text-white bg-blue-600 w-full text-center py-2 rounded-lg">
+          لیست چت‌ها
         </h1>
-        {rooms?.map((data) => {
-          return (
-            <button
-              className="chat-room-button"
-              onClick={() => navigate(`/helper/${data.slug}`)}
-              key={data.id}
-            >
-              <p>{data.name}</p>
-              <p className="text-[12px]">
-                {data?.created_at
-                  ? new Date(data.created_at).toLocaleTimeString("fa-IR", {
+
+        <Button
+          type="dashed"
+          icon={<PlusCircleOutlined />}
+          onClick={() => setIsModalOpen(true)}
+          className="w-full border-blue-500 text-blue-600 font-semibold"
+        >
+          چت جدید
+        </Button>
+
+        <div className="flex flex-col w-full mt-2 overflow-y-auto h-full">
+          {roomsLoading ? (
+            <Spin />
+          ) : rooms?.length ? (
+            rooms.map((data) => (
+              <button
+                key={data.id}
+                onClick={() => navigate(`/helper/${data.slug}`)}
+                className={`text-right p-2 my-1 rounded-lg transition-all duration-200 ${
+                  id === data.slug
+                    ? "bg-blue-500 text-white"
+                    : "bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-gray-600"
+                }`}
+              >
+                <p className="font-medium truncate">{data.name}</p>
+                <p className="text-[11px] opacity-70">
+                  {data?.created_at
+                    ? new Date(data.created_at).toLocaleTimeString("fa-IR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : ""}
+                </p>
+              </button>
+            ))
+          ) : (
+            <p className="text-gray-400 text-center mt-10">چتی وجود ندارد</p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900 p-4">
+        <div className="flex-1 overflow-y-auto space-y-3 mb-4">
+          {chatLoading ? (
+            <div className="flex justify-center items-center h-full">
+              <Spin tip="در حال بارگذاری..." />
+            </div>
+          ) : ChatHistoryBySlug?.messages.length ? (
+            ChatHistoryBySlug.messages.map((data) => (
+              <div
+                key={data.id}
+                className={`flex ${
+                  data.sender === "user" ? "justify-start" : "justify-end"
+                }`}
+              >
+                <div
+                  className={`max-w-[70%] p-3 rounded-2xl shadow-md ${
+                    data.sender === "user"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-300 dark:bg-gray-700 text-gray-900 dark:text-white"
+                  }`}
+                >
+                  <div className="text-sm">{data.message}</div>
+                  <div className="text-[10px] opacity-70 mt-1 text-right">
+                    {new Date(data.timestamp).toLocaleTimeString("fa-IR", {
                       hour: "2-digit",
                       minute: "2-digit",
-                    })
-                  : ""}
-              </p>
-            </button>
-          );
-        })}
-      </div>
+                    })}
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-400 text-center mt-10">
+              هنوز پیامی ارسال نشده است.
+            </p>
+          )}
+          <div ref={chatEndRef} />
+        </div>
 
-      <div className="flex w-full bg-red-100 h-full overflow-y-scroll flex-col gap-2 p-4 space-y-3">
-        {ChatHistoryBySlug?.messages.map((data) => (
-          <div
-            key={data.id}
-            className={` inline-flex justify-between ${
-              data.sender === "user"
-                ? " mr-auto bg-amber-300"
-                : " ml-auto text-right bg-primary text-white"
-            } w-[200px] min-h-[100px] p-4 rounded-xl`}
+        <Form
+          form={form}
+          layout="inline"
+          style={{height : "90px" , padding : "12px" , display : "flex" , justifyContent : "space-between" , alignItems : "center"}}
+          onFinish={handleSend}
+          className="bg-white dark:bg-gray-800 p-3 rounded-xl shadow-xl "
+        >
+          <Form.Item
+            name="content"
+            style={{width:"100%" , maxWidth : "400px"}}
+            className="flex-1 mr-2"
+            rules={[{ required: true, message: "پیام خود را وارد کنید!" }]}
           >
-            <div className="flex gap-2 flex-col">
-              <span className="text-[12px] font-bold">
-                {data.sender === "user" ? "شما:" : "ربات:"}
-              </span>
-              <span>{data.message}</span>
-            </div>
-            <div className="text-[10px] opacity-50 mt-1 text-left">
-              {new Date(data.timestamp).toLocaleTimeString("fa-IR", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <Form
-        style={{
-          fontFamily: "Vazir",
-          width: "100%",
-          position: "absolute",
-          bottom: "0px",
-          right: "0px",
-          border: "none",
-          boxShadow: "inherit",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "10px 20px",
-        }}
-        rootClassName="Vazir"
-        onFinish={handleSend}
-        layout="inline"
-        className="p-4 border-t shadow-2xl bg-white dark:bg-gray-800 flex items-center"
-      >
-        <Form.Item
-          name="content"
-          className="w-[300px] "
-          rules={[{ required: true, message: "پیام خود را وارد کنید!" }]}
-        >
-          <Input
-            style={{ fontFamily: "Vazir" }}
-            placeholder="پیام خود را بنویسید..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className="rounded-xl h-[50px] flex items-center justify-start"
-          />
-        </Form.Item>
-
-        <Modal
-          title={"اتاق جدید"}
-          open={isModalOpen}
-          onCancel={() => setIsModalOpen(false)}
-          footer={null}
-        >
-          <Form onFinish={handleSetNewRoom}>
-            <Form.Item name={"name"}>
-              <Input />
-            </Form.Item>
-            <Form.Item>
-              <Button type="primary" htmlType="submit">
-                ساختن
-              </Button>
-            </Form.Item>
-          </Form>
-        </Modal>
-        <Form.Item style={{ width: "60px", height: "30px" }}>
+            <Input
+              placeholder="پیام خود را بنویسید..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="rounded-xl h-[45px]"
+            />
+          </Form.Item>
           <Button
             type="primary"
-            className="w-full h-full"
             htmlType="submit"
-            disabled={sendMessageBySlug.isPending}
+            icon={<SendOutlined />}
+            loading={sendMessageBySlug.isPending}
           >
             ارسال
           </Button>
-        </Form.Item>
-      </Form>
+        </Form>
+      </div>
+
+      <Modal
+        title="اتاق جدید"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={null}
+      >
+        <Form onFinish={handleSetNewRoom}>
+          <Form.Item
+            name="name"
+            rules={[{ required: true, message: "نام اتاق را وارد کنید!" }]}
+          >
+            <Input placeholder="نام چت جدید..." />
+          </Form.Item>
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={new_room.isPending}
+              className="w-full"
+            >
+              ساختن
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

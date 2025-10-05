@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   BookOutlined,
   FileExclamationOutlined,
@@ -12,24 +12,35 @@ import {
 import Cookies from "js-cookie";
 import type { MenuProps } from "antd";
 import { Button, Layout, Menu, theme } from "antd";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 
 const { Header, Content, Sider } = Layout;
 
 const ProfileLayout: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
 
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
+ 
   const menuItems: MenuProps["items"] = [
     { key: "/", icon: <UserOutlined />, label: "پروفایل" },
     { key: "/reception", icon: <BookOutlined />, label: "پیشخوان" },
     { key: "/helper", icon: <MedicineBoxOutlined />, label: "دستیار" },
     { key: "/exams", icon: <FileExclamationOutlined />, label: "آزمون ها" },
-    { key: "/assistant", icon: <GoldOutlined />, label: "مشاوره" },
+    {
+      key: "/assistant",
+      icon: <GoldOutlined />,
+      label: "مشاوره",
+      children: [
+        { key: "/assistant/request", label: "دریافت مشاوره" },
+        { key: "/assistant/received", label: "دریافت‌شده‌ها" },
+        { key: "/assistant/completed", label: "اتمام‌شده‌ها" },
+      ],
+    },
     { key: "/setting", icon: <SettingOutlined />, label: "تنظیمات" },
   ];
 
@@ -37,10 +48,11 @@ const ProfileLayout: React.FC = () => {
     navigate(e.key);
   };
 
+  // ✅ مدیریت ورود/خروج
   const token_access = Cookies.get("token-access");
   const token_refresh = Cookies.get("token-refresh");
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!token_access || !token_refresh) {
       Cookies.remove("token-access");
       Cookies.remove("token-refresh");
@@ -56,6 +68,7 @@ const ProfileLayout: React.FC = () => {
 
   return (
     <Layout style={{ height: "100vh", fontFamily: "Vazir" }}>
+      {/* هدر */}
       <Header
         style={{
           display: "flex",
@@ -64,20 +77,19 @@ const ProfileLayout: React.FC = () => {
           backgroundColor: "#284b63",
         }}
       >
-        <div className="text-white font-bold Yekan text-lg">سایت</div>
-        <div className="text-white flex gap-4 font-bold Yekan text-lg">
-          <Button onClick={SignOut} type="primary">
-            خروج
-          </Button>
-        </div>
+        <div className="text-white font-bold text-lg">سایت</div>
+        <Button onClick={SignOut} type="primary">
+          خروج
+        </Button>
       </Header>
 
-      <Layout style={{ fontFamily: "Vazir", background: colorBgContainer, borderRadius: borderRadiusLG }}>
+      <Layout style={{ background: colorBgContainer, borderRadius: borderRadiusLG }}>
+
         <Sider
           collapsible
           collapsed={collapsed}
           onCollapse={(value) => setCollapsed(value)}
-          width={200}
+          width={220}
           style={{ background: colorBgContainer }}
         >
           <div
@@ -93,14 +105,19 @@ const ProfileLayout: React.FC = () => {
               icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             />
           </div>
+
+        
           <Menu
             mode="inline"
-            defaultSelectedKeys={["/"]}
-            style={{ height: "100%", color: "#284b63", width: "100%" }}
+            selectedKeys={[location.pathname]} 
+            defaultOpenKeys={["/assistant"]}
+            style={{ height: "100%", color: "#284b63" }}
             items={menuItems}
             onClick={handleMenuClick}
           />
         </Sider>
+
+    
         <Layout>
           <Content style={{ padding: "24px", minHeight: "100%" }}>
             <Outlet />
