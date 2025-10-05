@@ -84,4 +84,3 @@ class Reservation(models.Model):
 
     def __str__(self):
         return f"Reservation: {self.user.username} → {self.consultant.user.username} ({self.type})"
-

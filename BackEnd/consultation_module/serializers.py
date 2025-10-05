@@ -121,5 +121,3 @@ class ConsultantWithTimesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Consultant
         fields = ["id", "user", "bio", "times"]
-
-

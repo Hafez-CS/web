@@ -271,4 +271,3 @@ class SingleConsultantsWithTimesView(generics.ListAPIView):
         return Consultant.objects.filter(
             times__is_reserved=False
         ).distinct()
-
