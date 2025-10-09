@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from datetime import datetime
 
 
 class ConsultationType(models.TextChoices):
@@ -16,17 +17,15 @@ class ConsultationStatus(models.TextChoices):
     CANCELLED = 'cancelled', 'لغو شده'
 
 
-class ConsultantSchedule(models.Model):
-    """زمان‌بندی مشاور"""
+class ConsultantAvailableDate(models.Model):
+    """تایم‌های خاص مشاور بر اساس تاریخ - سیستم تقویم"""
     consultant = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='schedules',
+        related_name='available_dates',
         limit_choices_to={'role': 'consultant'}
     )
-    day_of_week = models.IntegerField(
-        choices=[(i, ['دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه', 'یکشنبه'][i]) for i in range(7)]
-    )
+    date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
     is_available = models.BooleanField(default=True)
@@ -34,21 +33,39 @@ class ConsultantSchedule(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ['consultant', 'day_of_week', 'start_time']
-        ordering = ['day_of_week', 'start_time']
+        unique_together = ['consultant', 'date', 'start_time']
+        ordering = ['date', 'start_time']
         indexes = [
-            models.Index(fields=['consultant', 'is_available']),
+            models.Index(fields=['consultant', 'is_available', 'date']),
         ]
-        verbose_name = 'زمان‌بندی مشاور'
-        verbose_name_plural = 'زمان‌بندی‌های مشاوران'
+        verbose_name = 'تاریخ آزاد مشاور'
+        verbose_name_plural = 'تاریخ‌های آزاد مشاوران'
 
     def clean(self):
         if self.start_time >= self.end_time:
             raise ValidationError("زمان پایان باید بعد از زمان شروع باشد")
+        
+        if self.date < timezone.now().date():
+            raise ValidationError("نمی‌توانید برای گذشته تایم تعریف کنید")
+
+    def is_booked(self):
+        """بررسی آیا این تایم رزرو شده است"""
+        return Consultation.objects.filter(
+            consultant=self.consultant,
+            scheduled_date=self.date,
+            scheduled_time__gte=self.start_time,
+            scheduled_time__lt=self.end_time,
+            status__in=[ConsultationStatus.PENDING, ConsultationStatus.CONFIRMED]
+        ).exists()
+
+    def can_be_modified(self):
+        """بررسی اینکه آیا این تایم قابل تغییر است (فقط جمعه‌ها و فقط اگر رزرو نشده باشد)"""
+        today = timezone.now().date()
+        is_friday = today.weekday() == 4  # 4 = Friday
+        return is_friday and not self.is_booked()
 
     def __str__(self):
-        days = ['دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه', 'یکشنبه']
-        return f"{self.consultant.get_full_name()} - {days[self.day_of_week]}: {self.start_time}-{self.end_time}"
+        return f"{self.consultant.get_full_name()} - {self.date} ({self.start_time}-{self.end_time})"
 
 
 class Consultation(models.Model):
@@ -147,16 +164,20 @@ class FreeConsultationCoupon(models.Model):
 
     def __str__(self):
         return f"{self.user.get_full_name()} - {self.code}"
-    
-class ConsultantAvailableDate(models.Model):
-    """تایم‌های خاص مشاور بر اساس تاریخ"""
+
+
+# DEPRECATED: This model is no longer used - keeping for migration compatibility
+class ConsultantSchedule(models.Model):
+    """زمان‌بندی مشاور - DEPRECATED: استفاده نشود، از ConsultantAvailableDate استفاده کنید"""
     consultant = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='available_dates',
+        related_name='schedules',
         limit_choices_to={'role': 'consultant'}
     )
-    date = models.DateField()
+    day_of_week = models.IntegerField(
+        choices=[(i, ['دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه', 'یکشنبه'][i]) for i in range(7)]
+    )
     start_time = models.TimeField()
     end_time = models.TimeField()
     is_available = models.BooleanField(default=True)
@@ -164,20 +185,11 @@ class ConsultantAvailableDate(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ['consultant', 'date', 'start_time']
-        ordering = ['date', 'start_time']
-        indexes = [
-            models.Index(fields=['consultant', 'is_available', 'date']),
-        ]
-        verbose_name = 'تاریخ آزاد مشاور'
-        verbose_name_plural = 'تاریخ‌های آزاد مشاوران'
-
-    def clean(self):
-        if self.start_time >= self.end_time:
-            raise ValidationError("زمان پایان باید بعد از زمان شروع باشد")
-        
-        if self.date < timezone.now().date():
-            raise ValidationError("نمی‌توانید برای گذشته تایم تعریف کنید")
+        unique_together = ['consultant', 'day_of_week', 'start_time']
+        ordering = ['day_of_week', 'start_time']
+        verbose_name = 'زمان‌بندی مشاور (قدیمی)'
+        verbose_name_plural = 'زمان‌بندی‌های مشاوران (قدیمی)'
 
     def __str__(self):
-        return f"{self.consultant.get_full_name()} - {self.date} ({self.start_time}-{self.end_time})"
+        days = ['دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه', 'یکشنبه']
+        return f"{self.consultant.get_full_name()} - {days[self.day_of_week]}: {self.start_time}-{self.end_time}"

@@ -5,7 +5,7 @@ from datetime import timedelta
 import uuid
 
 from .models import (
-    ConsultantSchedule, Consultation, FreeConsultationCoupon,
+    Consultation, FreeConsultationCoupon,
     ConsultationType, ConsultationStatus, ConsultantAvailableDate
 )
 from accounts.models import UserProfile
@@ -23,26 +23,36 @@ class UserBasicSerializer(serializers.ModelSerializer):
         return obj.get_full_name() or obj.username
 
 
-class ConsultantScheduleSerializer(serializers.ModelSerializer):
+class ConsultantAvailableDateSerializer(serializers.ModelSerializer):
+    """سریالایزر تایم‌های تقویمی مشاور"""
     consultant_name = serializers.SerializerMethodField(read_only=True)
-    day_name = serializers.SerializerMethodField(read_only=True)
+    is_booked = serializers.SerializerMethodField(read_only=True)
+    can_modify = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
-        model = ConsultantSchedule
-        fields = ['id', 'consultant', 'consultant_name', 'day_of_week', 'day_name',
-                  'start_time', 'end_time', 'is_available', 'created_at']
-        read_only_fields = ['consultant', 'created_at']
+        model = ConsultantAvailableDate
+        fields = ['id', 'consultant', 'consultant_name', 'date', 
+                  'start_time', 'end_time', 'is_available', 'is_booked', 'can_modify', 'created_at']
+        read_only_fields = ['consultant', 'created_at', 'is_booked', 'can_modify']
 
     def get_consultant_name(self, obj):
         return obj.consultant.get_full_name() or obj.consultant.username
     
-    def get_day_name(self, obj):
-        days = ['دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه', 'یکشنبه']
-        return days[obj.day_of_week]
+    def get_is_booked(self, obj):
+        """آیا این تایم رزرو شده است"""
+        return obj.is_booked()
+    
+    def get_can_modify(self, obj):
+        """آیا این تایم قابل تغییر است (فقط جمعه‌ها و تایم‌های رزرو نشده)"""
+        return obj.can_be_modified()
 
     def validate(self, data):
         if data['start_time'] >= data['end_time']:
             raise serializers.ValidationError("زمان پایان باید بعد از زمان شروع باشد")
+        
+        if data['date'] < timezone.now().date():
+            raise serializers.ValidationError("نمی‌توانید برای گذشته تایم تعریف کنید")
+        
         return data
 
 
@@ -89,7 +99,7 @@ class ConsultationSerializer(serializers.ModelSerializer):
 
 
 class BookConsultationSerializer(serializers.Serializer):
-    """سریالایزر رزرو مشاوره (تک جلسه یا پکیج)"""
+    """سریالایزر رزرو مشاوره (تک جلسه یا پکیج) - سیستم تقویمی"""
     consultant_id = serializers.IntegerField()
     consultation_type = serializers.ChoiceField(choices=ConsultationType.choices)
     scheduled_date = serializers.DateField()
@@ -107,11 +117,13 @@ class BookConsultationSerializer(serializers.Serializer):
         consultant = data['consultant_id']
         date = data['scheduled_date']
         time = data['scheduled_time']
+        consultation_type = data['consultation_type']
         
         if date < timezone.now().date():
             raise serializers.ValidationError("نمی‌توانید برای گذشته رزرو کنید")
         
-        matching_date_slot = ConsultantAvailableDate.objects.filter(
+        # پیدا کردن تایم مشاور در تاریخ مشخص
+        matching_slot = ConsultantAvailableDate.objects.filter(
             consultant=consultant,
             date=date,
             start_time__lte=time,
@@ -119,31 +131,17 @@ class BookConsultationSerializer(serializers.Serializer):
             is_available=True
         ).first()
         
-        if not matching_date_slot:
-            day_of_week = date.weekday()
-            
-            matching_slot = ConsultantSchedule.objects.filter(
-                consultant=consultant,
-                day_of_week=day_of_week,
-                start_time__lte=time,
-                end_time__gt=time,
-                is_available=True
-            ).first()
-            
-            if not matching_slot:
-                raise serializers.ValidationError(
-                    f"مشاور در تاریخ {date} و ساعت {time.strftime('%H:%M')} تایم خالی ندارد"
-                )
-            
-            matched_slot = matching_slot
-        else:
-            matched_slot = matching_date_slot
+        if not matching_slot:
+            raise serializers.ValidationError(
+                f"مشاور در تاریخ {date} و ساعت {time.strftime('%H:%M')} تایم خالی ندارد"
+            )
         
+        # بررسی تداخل با رزروهای موجود
         conflict = Consultation.objects.filter(
             consultant=consultant,
             scheduled_date=date,
-            scheduled_time__gte=matched_slot.start_time,
-            scheduled_time__lt=matched_slot.end_time,
+            scheduled_time__gte=matching_slot.start_time,
+            scheduled_time__lt=matching_slot.end_time,
             status__in=[ConsultationStatus.PENDING, ConsultationStatus.CONFIRMED]
         ).exists()
         
@@ -152,7 +150,15 @@ class BookConsultationSerializer(serializers.Serializer):
                 f"این تایم در تاریخ {date} قبلاً رزرو شده است"
             )
         
-        data['_matched_slot'] = matched_slot
+        # برای پکیج، بررسی اینکه آیا مشاور 5 تایم خالی دارد
+        if consultation_type == ConsultationType.PACKAGE:
+            available_slots = self._get_available_slots(consultant, date)
+            if len(available_slots) < 5:
+                raise serializers.ValidationError(
+                    f"مشاور تایم‌های کافی برای پکیج ندارد. تایم‌های موجود: {len(available_slots)} (حداقل 5 نیاز است)"
+                )
+        
+        data['_matched_slot'] = matching_slot
         return data
     
     @transaction.atomic
@@ -167,6 +173,7 @@ class BookConsultationSerializer(serializers.Serializer):
         
         discount_amount = 0
         
+        # بررسی کوپن تخفیف
         if discount_code:
             try:
                 coupon = FreeConsultationCoupon.objects.get(
@@ -197,20 +204,22 @@ class BookConsultationSerializer(serializers.Serializer):
         elif consultation_type == ConsultationType.PACKAGE:
             package_group = f"{user.id}_{consultant.id}_{uuid.uuid4().hex[:8]}"
             
-            available_dates = self._get_available_slots(consultant, date, weeks=8)
+            # پیدا کردن 5 تایم خالی از تقویم مشاور
+            available_slots = self._get_available_slots(consultant, date)
             
-            if len(available_dates) < 5:
+            if len(available_slots) < 5:
                 raise serializers.ValidationError(
                     "مشاور بازه‌های زمانی کافی برای پکیج (۵ جلسه) ندارد"
                 )
             
-            for i, (session_date, session_time) in enumerate(available_dates[:5], 1):
+            # رزرو خودکار 5 جلسه از تقویم
+            for i, slot in enumerate(available_slots[:5], 1):
                 consultation = Consultation.objects.create(
                     user=user,
                     consultant=consultant,
                     consultation_type=consultation_type,
-                    scheduled_date=session_date,
-                    scheduled_time=session_time,
+                    scheduled_date=slot.date,
+                    scheduled_time=slot.start_time,
                     package_group=package_group,
                     session_number=i,
                     discount_code=discount_code if i == 1 else '',
@@ -220,59 +229,42 @@ class BookConsultationSerializer(serializers.Serializer):
         
         return consultations[0] if len(consultations) == 1 else consultations
 
-    def _get_available_slots(self, consultant, start_date, weeks=8):
-        """بازه‌های زمانی خالی مشاور در هفته‌های آینده"""
-        available = []
-        current_date = start_date
-        end_date = start_date + timedelta(weeks=weeks)
+    def _get_available_slots(self, consultant, start_date):
+        """بازه‌های زمانی خالی مشاور از تقویم - برای 60 روز آینده"""
+        end_date = start_date + timedelta(days=60)
         
-        while current_date <= end_date and len(available) < 10:
-            day_of_week = current_date.weekday()
-            
-            schedules = ConsultantSchedule.objects.filter(
+        # گرفتن تمام تایم‌های موجود مشاور در این بازه
+        available_dates = ConsultantAvailableDate.objects.filter(
+            consultant=consultant,
+            date__gte=start_date,
+            date__lte=end_date,
+            is_available=True
+        ).order_by('date', 'start_time')
+        
+        available_slots = []
+        
+        for slot in available_dates:
+            # بررسی که رزرو نشده باشد
+            is_booked = Consultation.objects.filter(
                 consultant=consultant,
-                day_of_week=day_of_week,
-                is_available=True
-            ).order_by('start_time')
+                scheduled_date=slot.date,
+                scheduled_time__gte=slot.start_time,
+                scheduled_time__lt=slot.end_time,
+                status__in=[ConsultationStatus.PENDING, ConsultationStatus.CONFIRMED]
+            ).exists()
             
-            for schedule in schedules:
-                is_booked = Consultation.objects.filter(
-                    consultant=consultant,
-                    scheduled_date=current_date,
-                    scheduled_time__gte=schedule.start_time,
-                    scheduled_time__lt=schedule.end_time,
-                    status__in=[ConsultationStatus.PENDING, ConsultationStatus.CONFIRMED]
-                ).exists()
+            if not is_booked:
+                available_slots.append(slot)
                 
-                if not is_booked:
-                    available.append((current_date, schedule.start_time))
-            
-            current_date += timedelta(days=1)
+                # اگر 5 تایم پیدا کردیم، کافیه
+                if len(available_slots) >= 5:
+                    break
         
-        return available
+        return available_slots
+
+
 class FreeConsultationCouponSerializer(serializers.ModelSerializer):
     class Meta:
         model = FreeConsultationCoupon
         fields = ['id', 'code', 'used', 'used_at', 'created_at']
         read_only_fields = ['code', 'used', 'used_at', 'created_at']
-
-class ConsultantAvailableDateSerializer(serializers.ModelSerializer):
-    consultant_name = serializers.SerializerMethodField(read_only=True)
-    
-    class Meta:
-        model = ConsultantAvailableDate
-        fields = ['id', 'consultant', 'consultant_name', 'date', 
-                  'start_time', 'end_time', 'is_available', 'created_at']
-        read_only_fields = ['consultant', 'created_at']
-
-    def get_consultant_name(self, obj):
-        return obj.consultant.get_full_name() or obj.consultant.username
-
-    def validate(self, data):
-        if data['start_time'] >= data['end_time']:
-            raise serializers.ValidationError("زمان پایان باید بعد از زمان شروع باشد")
-        
-        if data['date'] < timezone.now().date():
-            raise serializers.ValidationError("نمی‌توانید برای گذشته تایم تعریف کنید")
-        
-        return data

@@ -1,13 +1,5 @@
 from django.contrib import admin
-from .models import ConsultantSchedule, Consultation, FreeConsultationCoupon, ConsultantAvailableDate
-
-
-@admin.register(ConsultantSchedule)
-class ConsultantScheduleAdmin(admin.ModelAdmin):
-    list_display = ['consultant', 'day_of_week', 'start_time', 'end_time', 'is_available']
-    list_filter = ['is_available', 'day_of_week', 'consultant']
-    search_fields = ['consultant__email', 'consultant__username']
-    ordering = ['consultant', 'day_of_week', 'start_time']
+from .models import Consultation, FreeConsultationCoupon, ConsultantAvailableDate
 
 
 @admin.register(Consultation)
@@ -26,9 +18,16 @@ class FreeConsultationCouponAdmin(admin.ModelAdmin):
     search_fields = ['user__email', 'code']
     readonly_fields = ['created_at', 'used_at']
 
+
 @admin.register(ConsultantAvailableDate)
 class ConsultantAvailableDateAdmin(admin.ModelAdmin):
     list_display = ['consultant', 'date', 'start_time', 'end_time', 'is_available']
     list_filter = ['is_available', 'date', 'consultant']
     search_fields = ['consultant__email', 'consultant__username']
     ordering = ['date', 'start_time']
+    
+    def get_queryset(self, request):
+        """نمایش تایم‌های آینده به صورت پیش‌فرض"""
+        qs = super().get_queryset(request)
+        from django.utils import timezone
+        return qs.filter(date__gte=timezone.now().date())
