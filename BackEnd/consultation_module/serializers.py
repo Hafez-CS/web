@@ -33,7 +33,7 @@ class ConsultantAvailableDateSerializer(serializers.ModelSerializer):
         model = ConsultantAvailableDate
         fields = ['id', 'consultant', 'consultant_name', 'date', 
                   'start_time', 'end_time', 'is_available', 'is_booked', 'can_modify', 'created_at']
-        read_only_fields = ['consultant', 'created_at', 'is_booked', 'can_modify']
+        read_only_fields = ['consultant', 'created_at']
 
     def get_consultant_name(self, obj):
         return obj.consultant.get_full_name() or obj.consultant.username
@@ -47,11 +47,24 @@ class ConsultantAvailableDateSerializer(serializers.ModelSerializer):
         return obj.can_be_modified()
 
     def validate(self, data):
-        if data['start_time'] >= data['end_time']:
-            raise serializers.ValidationError("زمان پایان باید بعد از زمان شروع باشد")
+        # Handle partial updates
+        start_time = data.get('start_time')
+        end_time = data.get('end_time')
+        date = data.get('date')
         
-        if data['date'] < timezone.now().date():
-            raise serializers.ValidationError("نمی‌توانید برای گذشته تایم تعریف کنید")
+        # If updating, get existing values
+        if self.instance:
+            start_time = start_time if start_time is not None else self.instance.start_time
+            end_time = end_time if end_time is not None else self.instance.end_time
+            date = date if date is not None else self.instance.date
+        
+        if start_time and end_time:
+            if start_time >= end_time:
+                raise serializers.ValidationError("زمان پایان باید بعد از زمان شروع باشد")
+        
+        if date:
+            if date < timezone.now().date():
+                raise serializers.ValidationError("نمی‌توانید برای گذشته تایم تعریف کنید")
         
         return data
 

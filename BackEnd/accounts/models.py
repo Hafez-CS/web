@@ -18,5 +18,11 @@ class UserProfile(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
+    def get_full_name(self):
+        """Returns first_name + last_name or empty string"""
+        if self.first_name or self.last_name:
+            return f"{self.first_name} {self.last_name}".strip()
+        return self.email
+
     def __str__(self):
         return f"{self.email} ({self.get_role_display()})"

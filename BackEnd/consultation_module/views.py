@@ -23,6 +23,7 @@ class ConsultantAvailableDateViewSet(viewsets.ModelViewSet):
     """مدیریت تقویم تایم‌های آزاد مشاور - سیستم تقویمی"""
     serializer_class = ConsultantAvailableDateSerializer
     permission_classes = [permissions.IsAuthenticated, IsConsultant]
+    
     def get_queryset(self):
         return ConsultantAvailableDate.objects.filter(
             consultant=self.request.user,
@@ -77,7 +78,7 @@ class ConsultantAvailableDateViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="ایجاد گروهی تایم‌ها در تقویم",
-        tags=["Consultant-consultation_module"]
+        tags=["Consultant-Schedule"]
     )
     @action(detail=False, methods=['post'])
     def bulk_create(self, request):
@@ -106,7 +107,7 @@ class ConsultantAvailableDateViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="حذف گروهی تایم‌ها",
-        tags=["Consultant-consultation_module"]
+        tags=["Consultant-Schedule"]
     )
     @action(detail=False, methods=['post'])
     def bulk_delete(self, request):
@@ -145,7 +146,7 @@ class ConsultantAvailableDateViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="بروزرسانی گروهی تایم‌ها",
-        tags=["Consultant-consultation_module"]
+        tags=["Consultant-Schedule"]
     )
     @action(detail=False, methods=['post'])
     def bulk_update(self, request):
@@ -190,7 +191,7 @@ class ConsultantAvailableDateViewSet(viewsets.ModelViewSet):
             OpenApiParameter('start_date', str, description='تاریخ شروع (YYYY-MM-DD)'),
             OpenApiParameter('end_date', str, description='تاریخ پایان (YYYY-MM-DD)'),
         ],
-        tags=["Consultant-consultation_module"]
+        tags=["Consultant-Schedule"]
     )
     @action(detail=False, methods=['get'])
     def date_range(self, request):
@@ -233,7 +234,7 @@ class ConsultationViewSet(viewsets.ReadOnlyModelViewSet):
             OpenApiParameter('start_date', str, description='تاریخ شروع جستجو (YYYY-MM-DD)', required=False),
             OpenApiParameter('end_date', str, description='تاریخ پایان جستجو (YYYY-MM-DD)', required=False),
         ],
-        tags=["User-consultation_module"]
+        tags=["User-Consultations"]
     )
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def available_consultants(self, request):
@@ -306,7 +307,7 @@ class ConsultationViewSet(viewsets.ReadOnlyModelViewSet):
     @extend_schema(
         summary="رزرو مشاوره (تک جلسه یا پکیج)",
         request=BookConsultationSerializer,
-        tags=["User-consultation_module"]
+        tags=["User-Consultations"]
     )
     @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def book(self, request):
@@ -334,7 +335,7 @@ class ConsultationViewSet(viewsets.ReadOnlyModelViewSet):
 
     @extend_schema(
         summary="مشاوره‌های دریافت شده",
-        tags=["User-consultation_module", "Consultant-consultation_module"]
+        tags=["User-Consultations", "Consultant-Consultations"]
     )
     @action(detail=False, methods=['get'])
     def received(self, request):
@@ -348,7 +349,7 @@ class ConsultationViewSet(viewsets.ReadOnlyModelViewSet):
 
     @extend_schema(
         summary="مشاوره‌های تمام شده",
-        tags=["User-consultation_module", "Consultant-consultation_module"]
+        tags=["User-Consultations", "Consultant-Consultations"]
     )
     @action(detail=False, methods=['get'])
     def completed(self, request):
@@ -362,7 +363,7 @@ class ConsultationViewSet(viewsets.ReadOnlyModelViewSet):
 
     @extend_schema(
         summary="علامت‌گذاری مشاوره به عنوان تمام شده",
-        tags=["User-consultation_module", "Consultant-consultation_module"]
+        tags=["User-Consultations", "Consultant-Consultations"]
     )
     @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):
@@ -398,7 +399,7 @@ class ConsultationViewSet(viewsets.ReadOnlyModelViewSet):
 
     @extend_schema(
         summary="آمار مشاوره‌ها",
-        tags=["Consultant-consultation_module", "Admin-consultation_module"]
+        tags=["Consultant-Consultations", "Admin-Reports"]
     )
     @action(detail=False, methods=['get'])
     def statistics(self, request):
@@ -427,7 +428,7 @@ class FreeConsultationCouponViewSet(viewsets.ReadOnlyModelViewSet):
 
     @extend_schema(
         summary="دریافت کوپن رایگان یکبار مصرف",
-        tags=["User-consultation_module"]
+        tags=["User-Consultations"]
     )
     @action(detail=False, methods=['post'])
     def request_free_coupon(self, request):

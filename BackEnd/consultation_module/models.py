@@ -65,7 +65,8 @@ class ConsultantAvailableDate(models.Model):
         return is_friday and not self.is_booked()
 
     def __str__(self):
-        return f"{self.consultant.get_full_name()} - {self.date} ({self.start_time}-{self.end_time})"
+        consultant_name = self.consultant.get_full_name() or self.consultant.username
+        return f"{consultant_name} - {self.date} ({self.start_time}-{self.end_time})"
 
 
 class Consultation(models.Model):
@@ -136,7 +137,9 @@ class Consultation(models.Model):
             self.completed_at = timezone.now()
 
     def __str__(self):
-        return f"{self.user.get_full_name()} با {self.consultant.get_full_name()} در {self.scheduled_date}"
+        user_name = self.user.get_full_name() or self.user.username
+        consultant_name = self.consultant.get_full_name() or self.consultant.username
+        return f"{user_name} با {consultant_name} در {self.scheduled_date}"
 
 
 class FreeConsultationCoupon(models.Model):
@@ -163,7 +166,8 @@ class FreeConsultationCoupon(models.Model):
         self.save()
 
     def __str__(self):
-        return f"{self.user.get_full_name()} - {self.code}"
+        user_name = self.user.get_full_name() or self.user.username
+        return f"{user_name} - {self.code}"
 
 
 # DEPRECATED: This model is no longer used - keeping for migration compatibility
@@ -192,4 +196,4 @@ class ConsultantSchedule(models.Model):
 
     def __str__(self):
         days = ['دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه', 'یکشنبه']
-        return f"{self.consultant.get_full_name()} - {days[self.day_of_week]}: {self.start_time}-{self.end_time}"
+        return f"{self.consultant.get_full_name() or self.consultant.username} - {days[self.day_of_week]}: {self.start_time}-{self.end_time}"
