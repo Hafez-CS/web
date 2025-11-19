@@ -5,6 +5,7 @@ import { auth } from "../../../services/auth/auth.service.ts";
 import { toast } from "react-toastify";
 import { useForm } from "react-hook-form";
 import type { AxiosError } from "axios";
+import { Spin } from "antd";
 export default function SignUp() {
  const navigate = useNavigate()
   const {
@@ -23,7 +24,7 @@ export default function SignUp() {
     },
     onError: (error: AxiosError<unknown>) => {
   console.log("🚀 ~ SignUp ~ error:", error);
-  if(error.code === "400"){
+  if(error.code === "ERR_BAD_REQUEST"){
     toast.error("ایمیل یا نام کاربری تکراریست!")
   }
   // const msguserName = error.response?.data?.errors?.username?.[0];
@@ -61,6 +62,7 @@ export default function SignUp() {
     
       <div className="md:w-1/2 w-full flex justify-center items-center">
         <form
+        autoComplete="off"
           className="flex flex-col w-full justify-center h-auto gap-8 max-w-[500px] bg-white p-10 rounded-2xl shadow-xl"
           onSubmit={handleSubmit(SendDataHandler)}
         >
@@ -74,6 +76,7 @@ export default function SignUp() {
               نام کاربری :
             </label>
             <input
+            autoComplete="off"
               className="p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-secondry text-black"
               type="text"
               {...register("username", { required: "نام کاربری الزامیست" })}
@@ -91,6 +94,7 @@ export default function SignUp() {
               رمز عبور :
             </label>
             <input
+            autoComplete="off"
               className="p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-secondry text-black"
               type="password"
               {...register("password", { required: "رمز عبور الزامیست" })}
@@ -108,6 +112,7 @@ export default function SignUp() {
               تایید رمز عبور :
             </label>
             <input
+            autoComplete="off"
               className="p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-secondry text-black"
               type="password"
               {...register("acceptPassword", {
@@ -125,6 +130,7 @@ export default function SignUp() {
               ایمیل :
             </label>
             <input
+            autoComplete="off"
               className="p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-secondry text-black"
               type="email"
               {...register("email" )}
@@ -134,10 +140,12 @@ export default function SignUp() {
 
          
           <button
+          id="btnhover"
             className="rounded-xl cursor-pointer transition-colors py-4 hover:bg-black bg-secondry text-GrayColor dark:text-GrayColor font-extrabold flex justify-center items-center"
             type="submit"
+            disabled={SendData.isPending}
           >
-            ثبت نام
+            {SendData.isPending ? <Spin /> : "ثبت نام"}
           </button>
 
           

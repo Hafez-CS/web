@@ -6,6 +6,7 @@ import { auth } from "../../../services/auth/auth.service";
 import { toast } from "react-toastify";
 import { useForm } from "react-hook-form";
 import type { AxiosError } from "axios";
+import { Spin } from "antd";
 
 
 export default function Login() {
@@ -96,11 +97,16 @@ export default function Login() {
         </div>
 
         <button
-          className="rounded-xl cursor-pointer transition-colors py-3 hover:bg-black bg-secondry text-white font-extrabold flex justify-center items-center"
-          type="submit"
-        >
-          ورود
-        </button>
+  id="btnhover"
+  className={`rounded-xl cursor-pointer transition-colors py-3 font-extrabold flex justify-center items-center
+    ${SendData.isPending ? "opacity-50 cursor-not-allowed" : ""}
+  `}
+  type="submit"
+  disabled={SendData.isPending}
+>
+  {SendData.isPending ? <Spin /> : "ورود"}
+</button>
+
 
         <Link to={`/signup`}>
           <p className="text-center mx-auto text-black pt-6 font-medium">

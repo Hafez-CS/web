@@ -24,15 +24,33 @@ http.interceptors.request.use(
 http.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    const currentPath = window.location.pathname;
+
+    if (status === 401) {
       toast.error("دسترسی غیرمجاز. لطفاً دوباره وارد شوید.");
+
       Cookies.remove("token-access");
-      window.location.href = "/login";
-    } else if (error.response?.status === 500) {
+
+      if (currentPath !== "/signup") {
+        window.location.assign("/login");
+      }
+
+      if (currentPath !== "/login") {
+        window.location.assign("/login");
+      }
+
+      return Promise.reject(error);
+    }
+
+    if (status === 500) {
       toast.error("خطای سرور! لطفاً بعداً تلاش کنید.");
-    } else if (error.message === "Network Error") {
+    }
+
+    if (error.message === "Network Error") {
       toast.error("ارتباط با سرور برقرار نشد!");
     }
+
     return Promise.reject(error);
   }
 );
