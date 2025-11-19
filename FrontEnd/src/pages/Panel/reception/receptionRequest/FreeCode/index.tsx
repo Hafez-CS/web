@@ -1,17 +1,35 @@
+import { useMutation } from "@tanstack/react-query";
 import { Modal } from "antd";
 import { toast } from "react-toastify";
+import { consulatations, type ICode } from "../../../../../services/consultations/consultations.service";
+import { useEffect, useState } from "react";
 
 interface IFreeCode {
   isOpen: boolean;
   onClose: () => void;
-  Code: string;
 }
 
-export default function FreeCode({ isOpen, onClose, Code }: IFreeCode) {
+export default function FreeCode({ isOpen, onClose }: IFreeCode) {
+  const [codeData , setCodeData] = useState<ICode | null>(null)
+  const freeCode = useMutation({
+  mutationFn: () => consulatations.Request_Free_Coupon(),
+  onSuccess: (data : ICode) => {
+    console.log("🚀 ~ FreeCode ~ data:", data);
+    setCodeData(data)
+  }
+});
+
+
+
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(Code);
+    navigator.clipboard.writeText(codeData?.coupon.code as string);
     toast.success("کد با موفقیت کپی شد");
   };
+
+  useEffect(()=>{
+    freeCode.mutate()
+  },[isOpen])
+
 
   return (
     <Modal
@@ -24,11 +42,11 @@ export default function FreeCode({ isOpen, onClose, Code }: IFreeCode) {
         onClick={handleCopyCode}
         className="w-full flex justify-center items-center h-[60px] bg-gray-200 dark:bg-gray-700 rounded-2xl cursor-pointer hover:bg-gray-300 transition"
       >
-        <span className="font-mono text-lg select-none">{Code}</span>
+        <span className="font-mono text-lg select-none">{codeData?.coupon.code as string}</span>
       </section>
 
       <p className="text-center py-2 mt-3 text-gray-500 text-sm">
-        برای کپی کد روی آن کلیک کنید.
+        {codeData?.coupon.used ? "شما از این کد تخفیف استفاده کردید" : "برای کپی کد روی آن کلیک کنید."}
       </p>
     </Modal>
   );

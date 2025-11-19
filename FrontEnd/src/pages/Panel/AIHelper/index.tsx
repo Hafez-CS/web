@@ -97,7 +97,7 @@ export default function AIHelper() {
           چت جدید
         </Button>
 
-        <div className="flex flex-col w-full mt-2 overflow-y-auto h-full">
+        <div className="flex flex-col gap-2 w-full mt-2 overflow-y-auto h-full">
           {roomsLoading ? (
             <Spin />
           ) : rooms?.length ? (
@@ -108,10 +108,10 @@ export default function AIHelper() {
                 className={`text-right p-2 my-1 rounded-lg transition-all duration-200 ${
                   id === data.slug
                     ? "bg-blue-500 text-white"
-                    : "bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-gray-600"
+                    : "bg-white dark:bg-gray-700  text-gray-200 hover:bg-blue-100 dark:hover:bg-gray-600"
                 }`}
               >
-                <p className="font-medium truncate">{data.name}</p>
+                <p className="font-medium truncate ">{data.name}</p>
                 <p className="text-[11px] opacity-70">
                   {data?.created_at
                     ? new Date(data.created_at).toLocaleTimeString("fa-IR", {
