@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Table } from "antd";
-import { consulatations } from "../../../../../services/consultations/consultations.service";
+import {  useConsultations } from "../../../../../services/consultations/consultations.service";
 
 interface props {
   singleShown: boolean;
@@ -8,6 +8,7 @@ interface props {
 }
 
 export default function ConsultationsTable({ singleShown, packageShown }: props) {
+    const { available_consultants} = useConsultations()
   const columns = [
     { title: "شناسه", dataIndex: "id", key: "id" },
     { title: "نام کاربری", dataIndex: "username", key: "username" },
@@ -27,7 +28,7 @@ export default function ConsultationsTable({ singleShown, packageShown }: props)
     queryKey: ["consultationList", tableType],
     enabled: !!tableType, 
     queryFn: () =>
-      consulatations.available_consultants(
+      available_consultants(
         tableType as "single" | "package"
       ),
   });

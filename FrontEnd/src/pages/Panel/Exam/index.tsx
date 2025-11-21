@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { exam } from "../../../services/exam/exam.service";
+import {  useExamService } from "../../../services/exam/exam.service";
 import { Button, Radio, Spin, Progress } from "antd";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -8,11 +8,12 @@ import { useNavigate } from "react-router-dom";
 export default function ExamPage() {
   const slug = "python-basics"; 
   const navigate = useNavigate()
+  const {GetExam , SendExam} = useExamService()
 
 
   const { data: examData, isLoading } = useQuery({
     queryKey: ["Exam", slug],
-    queryFn: () => exam.GetExam(slug),
+    queryFn: () => GetExam(slug),
   });
 
 
@@ -25,7 +26,7 @@ export default function ExamPage() {
 
 
   const submitMutation = useMutation({
-    mutationFn: () => exam.SendExam(slug, answers),
+    mutationFn: () => SendExam(slug, answers),
     onSuccess: () => {
       toast.success("آزمون با موفقیت ارسال شد");
       navigate("/helper")
@@ -77,7 +78,7 @@ export default function ExamPage() {
             onChange={(e) => handleSelect(currentQuestion.id, e.target.value)}
             value={answers[currentQuestion.id]}
           >
-            {currentQuestion.options.map((opt, idx) => (
+            {currentQuestion.options.map((opt : string, idx : number) => (
               <Radio
                 key={idx}
                 value={opt}

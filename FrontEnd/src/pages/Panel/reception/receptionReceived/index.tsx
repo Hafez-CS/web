@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query"
-import { consulatations } from "../../../../services/consultations/consultations.service"
+import {  useConsultations } from "../../../../services/consultations/consultations.service"
 import ReceivedTable, { type IReceivedTable } from "./Table"
 
 export default function Received() {
+      const { exist_consultation} = useConsultations()
     const {data : List} = useQuery({
         queryKey : ["Consulatations"],
-        queryFn : () => consulatations.exist_consultantion()
+        queryFn : () => exist_consultation()
     })
     console.log("🚀 ~ Received ~ List:", List)
 

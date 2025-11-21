@@ -1,56 +1,56 @@
-import Cookies from "js-cookie";
+import useAuthHeader from "react-auth-kit/hooks/useAuthHeader";
 import { http } from "../../lib/http";
 
 export interface sendMessagedto {
-  slug : string
-  message : string
+  slug: string;
+  message: string;
 }
 
-export class ChatAPI {
-  async SendMessage(payload: sendMessagedto) {
-  const token = Cookies.get("token-access");
-  if (!token) throw new Error("No token");
+export const useChatApi = () => {
+  // گرفتن توکن از react-auth-kit
+  const authHeader = useAuthHeader();
 
-  const res = await http.post(
-    `api/chat/${payload.slug}/send-message/`,
-    { message: payload.message },     {
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
+  const getHeader = () => {
+    if (!authHeader) throw new Error("No token found");
+    return { Authorization: authHeader };
+  };
 
-  return res.data;
-}
-
-
-  async ChatHistory(slug: string) {
-    const token = Cookies.get("token-access");
-    if (!token) throw new Error("No token");
-    const res = await http.get(`api/chat/${slug}/chat-history/`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return res.data;
-  }
-
-  async rooms( ) {
-    const token = Cookies.get("token-access");
-    const res = await http.get("api/chat/rooms/" , {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return res.data;
-  }
-
-  async new_room(name : string) {
-    const token = Cookies.get("token-access");
-    // if (!token) throw new Error("N");
+  const SendMessage = async (payload: sendMessagedto) => {
     const res = await http.post(
-      "api/chat/new-room/",
-      {name}, 
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
+      `api/chat/${payload.slug}/send-message/`,
+      { message: payload.message },
+      { headers: getHeader() }
     );
     return res.data;
-  }
-}
+  };
 
-export const chatapi = new ChatAPI();
+  const ChatHistory = async (slug: string) => {
+    const res = await http.get(`api/chat/${slug}/chat-history/`, {
+      headers: getHeader(),
+    });
+    return res.data;
+  };
+
+  const Rooms = async () => {
+    const res = await http.get("api/chat/rooms/", {
+      headers: getHeader(),
+    });
+    return res.data;
+  };
+
+  const New_room = async (name: string) => {
+    const res = await http.post(
+      "api/chat/new-room/",
+      { name },
+      { headers: getHeader() }
+    );
+    return res.data;
+  };
+
+  return {
+    SendMessage,
+    ChatHistory,
+    Rooms,
+    New_room,
+  };
+};

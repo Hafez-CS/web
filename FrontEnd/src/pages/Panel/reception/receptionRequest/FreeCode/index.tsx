@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { Modal } from "antd";
 import { toast } from "react-toastify";
-import { consulatations, type ICode } from "../../../../../services/consultations/consultations.service";
+import { useConsultations, type ICode } from "../../../../../services/consultations/consultations.service";
 import { useEffect, useState } from "react";
 
 interface IFreeCode {
@@ -10,9 +10,10 @@ interface IFreeCode {
 }
 
 export default function FreeCode({ isOpen, onClose }: IFreeCode) {
+    const { Request_Free_Coupon} = useConsultations()
   const [codeData , setCodeData] = useState<ICode | null>(null)
   const freeCode = useMutation({
-  mutationFn: () => consulatations.Request_Free_Coupon(),
+  mutationFn: () => Request_Free_Coupon(),
   onSuccess: (data : ICode) => {
     console.log("🚀 ~ FreeCode ~ data:", data);
     setCodeData(data)

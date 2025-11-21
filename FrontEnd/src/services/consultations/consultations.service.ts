@@ -1,6 +1,7 @@
-import Cookies from "js-cookie";
+import useAuthHeader from "react-auth-kit/hooks/useAuthHeader";
 import { http } from "../../lib/http";
 
+// TYPES
 export interface ICode {
   message: string;
   coupon: ICodeInfo;
@@ -51,35 +52,46 @@ export interface IReceivedConsultation {
   created_at: string;
 }
 
-export class Consultations {
-  async Request_Free_Coupon(): Promise<ICode> {
-    const token = Cookies.get("token-access");
-    if (!token) throw new Error("No token");
+// HOOK SERVICE
+export const useConsultations = () => {
+  const authHeader = useAuthHeader();
 
+  const getHeader = () => {
+    const token = authHeader;
+    if (!token) throw new Error("No auth token found");
+    return { Authorization: token };
+  };
+
+  const Request_Free_Coupon = async (): Promise<ICode> => {
     const res = await http.post(
       `api/consultations/coupons/request_free_coupon/`,
       {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+      { headers: getHeader() }
     );
-
     return res.data;
-  }
-  async available_consultants(
+  };
+
+  const available_consultants = async (
     type: "single" | "package"
-  ): Promise<IConsultationItem[]> {
+  ): Promise<IConsultationItem[]> => {
     const res = await http.get(
-      `api/consultations/consultations/available_consultants/?consultation_type=${type}`
+      `api/consultations/consultations/available_consultants/?consultation_type=${type}`,
+      { headers: getHeader() }
     );
     return res.data;
-  }
-  async exist_consultantion(): Promise<IReceivedConsultation[]> {
-    const res = await http.get(`api/consultations/consultations/received/`);
-    return res.data;
-  }
-}
+  };
 
-export const consulatations = new Consultations();
+  const exist_consultation = async (): Promise<IReceivedConsultation[]> => {
+    const res = await http.get(
+      `api/consultations/consultations/received/`,
+      { headers: getHeader() }
+    );
+    return res.data;
+  };
+
+  return {
+    Request_Free_Coupon,
+    available_consultants,
+    exist_consultation,
+  };
+};
