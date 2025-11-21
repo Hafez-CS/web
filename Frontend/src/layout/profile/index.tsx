@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   BookOutlined,
   FileExclamationOutlined,
@@ -9,10 +9,12 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from "@ant-design/icons";
-import Cookies from "js-cookie";
 import type { MenuProps } from "antd";
 import { Button, Layout, Menu, theme } from "antd";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import useSignOut from "react-auth-kit/hooks/useSignOut";
+import useIsAuthenticated from "react-auth-kit/hooks/useIsAuthenticated";
+
 
 const { Header, Content, Sider } = Layout;
 
@@ -20,12 +22,13 @@ const ProfileLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const signOut = useSignOut();
+  const isAuthenticated = useIsAuthenticated();
 
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
- 
   const menuItems: MenuProps["items"] = [
     { key: "/", icon: <UserOutlined />, label: "پروفایل" },
     { key: "/reception", icon: <BookOutlined />, label: "پیشخوان" },
@@ -44,47 +47,28 @@ const ProfileLayout: React.FC = () => {
     { key: "/setting", icon: <SettingOutlined />, label: "تنظیمات" },
   ];
 
-  const handleMenuClick: MenuProps["onClick"] = (e) => {
-    navigate(e.key);
-  };
+  const handleMenuClick: MenuProps["onClick"] = (e) => navigate(e.key);
 
-  // ✅ مدیریت ورود/خروج
-  const token_access = Cookies.get("token-access");
-  const token_refresh = Cookies.get("token-refresh");
-
-  useEffect(() => {
-    if (!token_access || !token_refresh) {
-      Cookies.remove("token-access");
-      Cookies.remove("token-refresh");
-      navigate("/login");
-    }
-  }, [token_access, token_refresh, navigate]);
-
-  const SignOut = () => {
-    Cookies.remove("token-access");
-    Cookies.remove("token-refresh");
+  if (!isAuthenticated) {
     navigate("/login");
-  };
+    return null;
+  }
+
+  const SIGNOUT = () =>{
+    signOut()
+    navigate("/login")
+  }
 
   return (
     <Layout style={{ height: "100vh", fontFamily: "Vazir" }}>
-      {/* هدر */}
-      <Header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          backgroundColor: "#284b63",
-        }}
-      >
+      <Header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#284b63" }}>
         <div className="text-white font-bold text-lg">سایت</div>
-        <Button onClick={SignOut} type="primary">
+        <Button onClick={SIGNOUT} type="primary">
           خروج
         </Button>
       </Header>
 
       <Layout style={{ background: colorBgContainer, borderRadius: borderRadiusLG }}>
-
         <Sider
           collapsible
           collapsed={collapsed}
@@ -92,24 +76,13 @@ const ProfileLayout: React.FC = () => {
           width={220}
           style={{ background: colorBgContainer }}
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: collapsed ? "center" : "flex-end",
-              padding: "8px 12px",
-            }}
-          >
-            <Button
-              type="text"
-              onClick={() => setCollapsed(!collapsed)}
-              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            />
+          <div style={{ display: "flex", justifyContent: collapsed ? "center" : "flex-end", padding: "8px 12px" }}>
+            <Button type="text" onClick={() => setCollapsed(!collapsed)} icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />} />
           </div>
 
-        
           <Menu
             mode="inline"
-            selectedKeys={[location.pathname]} 
+            selectedKeys={[location.pathname]}
             defaultOpenKeys={["/assistant"]}
             style={{ height: "100%", color: "#284b63" }}
             items={menuItems}
@@ -117,7 +90,6 @@ const ProfileLayout: React.FC = () => {
           />
         </Sider>
 
-    
         <Layout>
           <Content style={{ padding: "24px", minHeight: "100%" }}>
             <Outlet />
