@@ -7,6 +7,7 @@ from .serializers import IdeaSerializer, IdeaCreateSerializer, IdeaListSerialize
 from chat_assistant.models import Chat, ChatRoom
 from chat_assistant.ai_client import send_to_ai
 from drf_spectacular.utils import extend_schema, OpenApiResponse
+from .ai_image_generator import generate_image_from_description, get_default_platform_image
 
 class CreateIdeaView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -66,10 +67,10 @@ class CreateIdeaView(generics.CreateAPIView):
         idea.chat_room_slug = room.slug
 
         if idea.idea_type == 'physical' and idea.physical_description:
-            image_prompt = f"یک تصویر برای محصول فیزیکی با این مشخصات تولید شد: {idea.physical_description}"
-            idea.generated_image = image_prompt
+            image_url = generate_image_from_description(idea.physical_description)
+            idea.generated_image = image_url if image_url else "https://via.placeholder.com/800x600?text=Physical+Product"
         else:
-            idea.generated_image = "تصویر پیش‌فرض برای ایده پلتفرمی"
+            idea.generated_image = get_default_platform_image()
 
         idea.save()
 
