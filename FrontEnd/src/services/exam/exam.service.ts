@@ -1,46 +1,29 @@
-import Cookies from "js-cookie";
+import useAuthHeader from "react-auth-kit/hooks/useAuthHeader";
 import { http } from "../../lib/http";
 
-export interface QuestionInfo {
-  id: number;
-  text: string;
-  options: string[];
-}
+export const useExamService = () => {
+  const token = useAuthHeader();
 
-export interface GetExamIntro {
-  title: string;
-  slug: string;
-  questions: QuestionInfo[];
-}
+  const getHeader = () => {
+    if (!token) throw new Error("No auth token");
+    return { Authorization: token };
+  };
 
-export class ExamService {
-  async GetExam(slug: string): Promise<GetExamIntro> {
-    const token = Cookies.get("token-access");
-    if (!token) throw new Error("No token");
-
+  const GetExam = async (slug: string) => {
     const res = await http.get(`api/exams/${slug}/start/`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: getHeader(),
     });
-
     return res.data;
-  }
+  };
 
-  async SendExam(slug: string, answers: Record<number, string>) {
-    const token = Cookies.get("token-access");
-    if (!token) throw new Error("No token");
-
+  const SendExam = async (slug: string, answers: Record<number, string>) => {
     const res = await http.post(
       `api/exams/${slug}/submit/`,
-      { answers }, 
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
+      { answers },
+      { headers: getHeader() }
     );
-
     return res.data;
-  }
-}
+  };
 
-export const exam = new ExamService();
+  return { GetExam, SendExam };
+};

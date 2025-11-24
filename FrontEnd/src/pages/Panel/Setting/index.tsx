@@ -1,19 +1,18 @@
 import { useMutation } from "@tanstack/react-query";
 import { Button, Popconfirm } from "antd";
-import { profileInfo } from "../../../services/profile/profile.service";
 import { toast } from "react-toastify";
-
 import { useNavigate } from "react-router-dom";
-
 import { useTheme } from "../../../context/ThemeContext";
 import { MoonOutlined, SunOutlined } from "@ant-design/icons";
+import useProfileApi from "../../../services/profile/profile.service";
 
 export default function Setting() {
-    const navigate = useNavigate()
+  const navigate = useNavigate()
+  const {DeleteAccount } = useProfileApi();
     const { theme, toggleTheme } = useTheme();
 
   const deleteAccountMutation = useMutation({
-    mutationFn: () => profileInfo.DeleteAccount(),
+    mutationFn: DeleteAccount,
     onError: () => {
       toast.error("خطا");
     },

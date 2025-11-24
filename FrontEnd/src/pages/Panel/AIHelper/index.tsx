@@ -1,12 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, useRef } from "react";
-import Cookies from "js-cookie";
+
 import { useNavigate, useParams } from "react-router-dom";
-import { chatapi, type sendMessagedto } from "../../../services/chat/chat.service";
+import {  useChatApi, type sendMessagedto } from "../../../services/chat/chat.service";
 import { Button, Form, Input, Modal, Spin } from "antd";
 import { toast } from "react-toastify";
 import type { IChatResponse, IModal, Irooms, ISendmessageResponse } from "./@types";
 import { PlusCircleOutlined, SendOutlined } from "@ant-design/icons";
+
+import useIsAuthenticated from "react-auth-kit/hooks/useIsAuthenticated";
+// import { useConsultations } from "../../../services/consultations/consultations.service";
 
 export default function AIHelper() {
   const { id } = useParams();
@@ -15,12 +18,16 @@ export default function AIHelper() {
   const [message, setMessage] = useState("");
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const {ChatHistory , New_room , SendMessage , Rooms} = useChatApi()
+
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const token = Cookies.get("token-access");
-    if (!token) navigate("/login");
-  }, [navigate]);
+
+const isAuthenticated = useIsAuthenticated();
+
+useEffect(() => {
+  if (!isAuthenticated) navigate("/login");
+}, [isAuthenticated, navigate]);
 
   useEffect(() => {
     setMessage("");
@@ -29,17 +36,17 @@ export default function AIHelper() {
 
   const { data: rooms, isLoading: roomsLoading } = useQuery<Irooms[]>({
     queryKey: ["rooms"],
-    queryFn: chatapi.rooms,
+    queryFn: Rooms,
   });
 
   const { data: ChatHistoryBySlug, isLoading: chatLoading } = useQuery<IChatResponse>({
     queryKey: ["ChatMessages", id],
-    queryFn: () => chatapi.ChatHistory(id || "test"),
+    queryFn: () => ChatHistory(id || "test"),
     enabled: !!id,
   });
 
   const new_room = useMutation({
-    mutationFn: chatapi.new_room,
+    mutationFn: New_room,
     onSuccess: (data: ISendmessageResponse) => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
       navigate(`/helper/${data.slug}`);
@@ -52,7 +59,7 @@ export default function AIHelper() {
   });
 
   const sendMessageBySlug = useMutation({
-    mutationFn: (payload: sendMessagedto) => chatapi.SendMessage(payload),
+    mutationFn: (payload: sendMessagedto) => SendMessage(payload),
     onSuccess: () => {
       toast.success("پیام با موفقیت ارسال شد");
       queryClient.invalidateQueries({ queryKey: ["ChatMessages", id] });
@@ -97,7 +104,7 @@ export default function AIHelper() {
           چت جدید
         </Button>
 
-        <div className="flex flex-col w-full mt-2 overflow-y-auto h-full">
+        <div className="flex flex-col gap-2 w-full mt-2 overflow-y-auto h-full">
           {roomsLoading ? (
             <Spin />
           ) : rooms?.length ? (
@@ -108,10 +115,10 @@ export default function AIHelper() {
                 className={`text-right p-2 my-1 rounded-lg transition-all duration-200 ${
                   id === data.slug
                     ? "bg-blue-500 text-white"
-                    : "bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-gray-600"
+                    : "bg-white dark:bg-gray-700  text-gray-200 hover:bg-blue-100 dark:hover:bg-gray-600"
                 }`}
               >
-                <p className="font-medium truncate">{data.name}</p>
+                <p className="font-medium truncate ">{data.name}</p>
                 <p className="text-[11px] opacity-70">
                   {data?.created_at
                     ? new Date(data.created_at).toLocaleTimeString("fa-IR", {

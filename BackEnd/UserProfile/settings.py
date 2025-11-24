@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'exam',
     'platform_admin_module',
     'consultation_module',
+    'startup_ideas',
 
     # ALL Packages
     'rest_framework',

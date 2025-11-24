@@ -1,32 +1,25 @@
-import Cookies from "js-cookie";
+
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { FormData, ProfileItems, type IForm, type IProfileItems } from "./@types";
-import { profileInfo } from "../../../services/profile/profile.service";
+import useProfileApi from "../../../services/profile/profile.service";
 import { Button, Form, Input, Modal } from "antd";
 import { useState } from "react";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+
 
 export default function Profile() {
-  const navigate = useNavigate();
-  const token_access = Cookies.get("token-access")
-  const token_refresh = Cookies.get("token-refresh")
+  const { getProfileInfo, updateProfileInfoPUT } = useProfileApi();
+  
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const { data: getProfileInfo, refetch } = useQuery({
+  const { data: GetProfileInfo, refetch } = useQuery({
     queryKey: ["ProfileInfo"],
-    queryFn: profileInfo.getProfileInfo,
+    queryFn: getProfileInfo,
   });
-  console.log("🚀 ~ Profile ~ token_refresh:", token_refresh)
-  if(token_refresh === undefined){
-    navigate("/login")
-  }
-  console.log("🚀 ~ Profile ~ token_access:", token_access)
-  // if(!token_access === undefined){
-  //   navigate("/login")
-  // }
+  
+  
   
   const UpdateProfileInfo = useMutation({
-    mutationFn: profileInfo.updateProfileInfoPUT,
+    mutationFn: updateProfileInfoPUT,
     onError: () => {
       toast.error("خط");
     },
@@ -46,13 +39,13 @@ export default function Profile() {
     let value: string | null = "";
     switch (item.id) {
       case 1:
-        value = getProfileInfo?.data.username || "";
+        value = GetProfileInfo?.data.username || "";
         break;
       case 2:
-        value = getProfileInfo?.data.bio || "";
+        value = GetProfileInfo?.data.bio || "";
         break;
       case 3:
-        value = getProfileInfo?.data.email || "";
+        value = GetProfileInfo?.data.email || "";
         break;
       default:
         value = "";
@@ -60,8 +53,7 @@ export default function Profile() {
     return { ...item, value };
   });
 
-  const token = Cookies.get("token-access");
-  console.log("🚀 ~ Profile ~ token:", token);
+  
 
   return (
     <>
