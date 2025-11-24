@@ -19,21 +19,27 @@ import "antd/dist/reset.css";
 import useIsAuthenticated from "react-auth-kit/hooks/useIsAuthenticated";
 import AuthProvider from "react-auth-kit";
 import createAuthStore from "react-auth-kit/store/createAuthStore";
+import Consultant from "./pages/Panel/Consultant";
+import Manager from "./pages/Panel/SchoolManager";
+import Platform_Manager from "./pages/Panel/PlatformManager";
+import Reports from "./pages/Panel/PlatformManager/Report";
+import ConsultantPanelManager from "./pages/Panel/PlatformManager/Consultant";
 
-// ⚡ Store رو خارج از کامپوننت می‌سازیم
+
 const store = createAuthStore("cookie", {
   authName: "_auth",
   cookieDomain: window.location.hostname,
   cookieSecure: window.location.protocol === "https:",
 });
 
-// مسیر محافظت‌شده
+
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = useIsAuthenticated();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
-const queryClient = new QueryClient();
+export const queryClient = new QueryClient();
 
 const App = () => {
   const { theme } = useTheme();
@@ -71,6 +77,24 @@ const App = () => {
                   <Route path="received" element={<Received />} />
                   <Route path="completed" element={<Reception />} />
                 </Route>
+                <Route path={"assistantpanel"}>
+                  <Route path="time" element={<Consultant/>}/>
+                  <Route path="received" element={<Consultant/>}/>
+                  <Route path="completed" element={<Consultant/>}/>
+                  <Route path="report" element={<Consultant/>}/>
+
+                </Route>
+                <Route path="manager">
+                  <Route path="users" element={<Manager/>} />
+                  <Route path="report" element={<Manager/>} />
+                </Route>
+                {/* <Route path="platform_Manager"> */}
+                  <Route path="platform_Manager/report" element={<Reports/>} />
+                  <Route path="platform_Manager/users" element={<Platform_Manager/>} />
+                  <Route path="platform_Manager/consultant" element={<ConsultantPanelManager/>}/>
+                  <Route path="platform_Manager/manager" element={<ConsultantPanelManager/>}/>
+
+                {/* </Route> */}
                 <Route path="setting" element={<Setting />} />
               </Route>
 

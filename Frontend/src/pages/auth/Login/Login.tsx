@@ -11,13 +11,21 @@ import useAuthHeader from "react-auth-kit/hooks/useAuthHeader";
 import useIsAuthenticated from "react-auth-kit/hooks/useIsAuthenticated";
 import useAuthUser from "react-auth-kit/hooks/useAuthUser";
 
+export interface AuthUser {
+  access: string;
+  email: string;
+  id: number;
+  refresh: string;
+  role: "normal" | "consultant" | "school-admin" | "platform-admin";
+  username: string;
+}
 
 export default function Login() {
   const signIn = useSignIn();
-  const authHeader = useAuthHeader()
-  const isAuth = useIsAuthenticated()
-  const userData = useAuthUser()
-  console.log("🚀 ~ Login ~ authHeader:", authHeader , isAuth , userData )
+  const authHeader = useAuthHeader();
+  const isAuth = useIsAuthenticated();
+  const userData = useAuthUser();
+  console.log("🚀 ~ Login ~ authHeader:", authHeader, isAuth, userData);
   const navigate = useNavigate();
   const {
     register,
@@ -30,29 +38,27 @@ export default function Login() {
     mutationFn: auth.Login,
     onSuccess: (res) => {
       const { data } = res;
-      console.log("🚀 ~ Login ~ data:", data?.data.user)
+      console.log("🚀 ~ Login ~ data:", data?.data.user);
 
       if (data?.data) {
-       
         const success = signIn({
-          auth:{
-            token: data.data.access,      
+          auth: {
+            token: data.data.access,
             type: "Bearer",
           },
-          userState : {
-            refresh : data.data.refresh,
-            access : data.data.access,
-            id : data.data.user.id,
-            username : data.data.user.username,
-            email : data.data.user.email,
-            role : data.data.user.role
-          }
-               
+          userState: {
+            refresh: data.data.refresh,
+            access: data.data.access,
+            id: data.data.user.id,
+            username: data.data.user.username,
+            email: data.data.user.email,
+            role: data.data.user.role,
+          },
         });
 
         if (success) {
           toast.success(data.message || "ورود موفقیت‌آمیز بود");
-          navigate("/"); // بعد لاگین میره صفحه اصلی
+          navigate("/");
         } else {
           toast.error("خطا در ست کردن اطلاعات کاربر");
         }
@@ -62,8 +68,9 @@ export default function Login() {
     },
     onError: (error: unknown) => {
       const err = error as AxiosError<{ message?: string }>;
-      console.log("🚀 ~ Login ~ err:", err)
-      if (err.response?.status === 401) toast.error("ایمیل یا رمز عبور اشتباه است");
+      console.log("🚀 ~ Login ~ err:", err);
+      if (err.response?.status === 401)
+        toast.error("ایمیل یا رمز عبور اشتباه است");
       else if (err.response?.status === 500) toast.error("خطا از سمت سرور");
     },
   });
@@ -79,7 +86,9 @@ export default function Login() {
         className="flex flex-col w-full gap-8 max-w-[550px] bg-white p-10 rounded-2xl shadow-xl"
         onSubmit={handleSubmit(SendDataHandler)}
       >
-        <h1 className="text-3xl text-center text-black font-bold mb-4">فرم ورود</h1>
+        <h1 className="text-3xl text-center text-black font-bold mb-4">
+          فرم ورود
+        </h1>
 
         <div className="flex flex-col gap-2">
           <label className="text-base text-black font-semibold">ایمیل :</label>
@@ -88,17 +97,27 @@ export default function Login() {
             {...register("email", { required: "نام کاربری الزامی است" })}
             type="email"
           />
-          {errors.email && <p className="text-red-500 font-bold text-sm">{errors.email.message}</p>}
+          {errors.email && (
+            <p className="text-red-500 font-bold text-sm">
+              {errors.email.message}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-base text-black font-semibold">رمز عبور :</label>
+          <label className="text-base text-black font-semibold">
+            رمز عبور :
+          </label>
           <input
             className="p-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-secondry text-black"
             {...register("password", { required: "رمز عبور الزامی است" })}
             type="password"
           />
-          {errors.password && <p className="text-red-500 font-bold text-sm">{errors.password.message}</p>}
+          {errors.password && (
+            <p className="text-red-500 font-bold text-sm">
+              {errors.password.message}
+            </p>
+          )}
         </div>
 
         <button
@@ -114,7 +133,8 @@ export default function Login() {
 
         <Link to={`/signup`}>
           <p className="text-center mx-auto text-black pt-6 font-medium">
-            حساب ندارید؟ <span className="text-secondry font-bold">ثبت نام</span>
+            حساب ندارید؟{" "}
+            <span className="text-secondry font-bold">ثبت نام</span>
           </p>
         </Link>
       </form>
