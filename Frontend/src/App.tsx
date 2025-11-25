@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConfigProvider, theme as antdTheme } from "antd";
-
+import faIR from "antd/locale/fa_IR";
+// import "jalaali-react-date-picker/lib/styles/index.css";
 import ProfileLayout from "./layout/profile";
 import Profile from "./pages/Panel/profile";
 import Login from "./pages/auth/Login/Login";
@@ -16,7 +17,7 @@ import Received from "./pages/Panel/reception/receptionReceived";
 import { useTheme } from "./context/ThemeContext";
 
 import "antd/dist/reset.css";
-import useIsAuthenticated from "react-auth-kit/hooks/useIsAuthenticated";
+// import useIsAuthenticated from "react-auth-kit/hooks/useIsAuthenticated";
 import AuthProvider from "react-auth-kit";
 import createAuthStore from "react-auth-kit/store/createAuthStore";
 import Consultant from "./pages/Panel/Consultant";
@@ -25,19 +26,24 @@ import Platform_Manager from "./pages/Panel/PlatformManager";
 import Reports from "./pages/Panel/PlatformManager/Report";
 import ConsultantPanelManager from "./pages/Panel/PlatformManager/Consultant";
 import PlatformAdminManager from "./pages/Panel/PlatformManager/Manager";
+import useAuthHeader from "react-auth-kit/hooks/useAuthHeader";
 
 
 const store = createAuthStore("cookie", {
   authName: "_auth",
-  cookieDomain: window.location.hostname,
+  cookieDomain: undefined,
   cookieSecure: window.location.protocol === "https:",
 });
 
 
 
+// const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+//   const isAuthenticated = useIsAuthenticated();
+//   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+// };
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const isAuthenticated = useIsAuthenticated();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+  const token = useAuthHeader();
+  return token ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
 export const queryClient = new QueryClient();
@@ -49,6 +55,7 @@ const App = () => {
     <AuthProvider store={store}>
       <QueryClientProvider client={queryClient}>
         <ConfigProvider
+        locale={faIR} direction="rtl"
           theme={{
             algorithm:
               theme === "dark"

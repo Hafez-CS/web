@@ -13,11 +13,12 @@ import {
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Button, Layout, Menu, theme } from "antd";
-import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { Outlet, useNavigate, useLocation, Navigate } from "react-router-dom";
 import useSignOut from "react-auth-kit/hooks/useSignOut";
-import useIsAuthenticated from "react-auth-kit/hooks/useIsAuthenticated";
+// import useIsAuthenticated from "react-auth-kit/hooks/useIsAuthenticated";
 import useAuthUser from "react-auth-kit/hooks/useAuthUser";
 import type { AuthUser } from "../../pages/auth/Login/Login";
+import useAuthHeader from "react-auth-kit/hooks/useAuthHeader";
 
 const { Header, Content, Sider } = Layout;
 
@@ -26,7 +27,7 @@ const ProfileLayout: React.FC = () => {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const signOut = useSignOut();
-  const isAuthenticated = useIsAuthenticated();
+  // const isAuthenticated = useIsAuthenticated();
   const user = useAuthUser<AuthUser>();
 
   // roles : platform_admin , school_admin , consultant , normal
@@ -157,10 +158,8 @@ const ProfileLayout: React.FC = () => {
 
   const handleMenuClick: MenuProps["onClick"] = (e) => navigate(e.key);
 
-  if (!isAuthenticated) {
-    navigate("/login");
-    return null;
-  }
+  const token = useAuthHeader();
+if (!token) return <Navigate to="/login" replace />;
 
   const SIGNOUT = () => {
     signOut();
