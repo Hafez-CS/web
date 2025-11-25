@@ -25,9 +25,7 @@ http.interceptors.response.use(
       if(window.location.pathname !== "/login"){
         window.location.assign("/login");
       }
-      if(window.location.pathname !== "/login"){
-        window.location.assign("/signup");
-      }
+      
     }
     if (status === 500) toast.error("خطای سرور! لطفاً بعداً تلاش کنید.");
     if (error.message === "Network Error") toast.error("ارتباط با سرور برقرار نشد!");

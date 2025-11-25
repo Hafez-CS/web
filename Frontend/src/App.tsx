@@ -24,6 +24,7 @@ import Manager from "./pages/Panel/SchoolManager";
 import Platform_Manager from "./pages/Panel/PlatformManager";
 import Reports from "./pages/Panel/PlatformManager/Report";
 import ConsultantPanelManager from "./pages/Panel/PlatformManager/Consultant";
+import PlatformAdminManager from "./pages/Panel/PlatformManager/Manager";
 
 
 const store = createAuthStore("cookie", {
@@ -92,7 +93,7 @@ const App = () => {
                   <Route path="platform_Manager/report" element={<Reports/>} />
                   <Route path="platform_Manager/users" element={<Platform_Manager/>} />
                   <Route path="platform_Manager/consultant" element={<ConsultantPanelManager/>}/>
-                  <Route path="platform_Manager/manager" element={<ConsultantPanelManager/>}/>
+                  <Route path="platform_Manager/manager" element={<PlatformAdminManager/>}/>
 
                 {/* </Route> */}
                 <Route path="setting" element={<Setting />} />

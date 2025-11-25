@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   BookOutlined,
-
   GoldOutlined,
   MedicineBoxOutlined,
   SettingOutlined,
@@ -9,8 +8,8 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   UsergroupAddOutlined,
-  RedEnvelopeTwoTone,
   RadiusUpleftOutlined,
+  FundProjectionScreenOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Button, Layout, Menu, theme } from "antd";
@@ -36,12 +35,11 @@ const ProfileLayout: React.FC = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  
   const menuItems: MenuProps["items"] = [
     { key: "/", icon: <UserOutlined />, label: "پروفایل" },
     { key: "/reception", icon: <BookOutlined />, label: "پیشخوان" },
     { key: "/helper", icon: <MedicineBoxOutlined />, label: "دستیار" },
-    { key: "/exams", icon: <BookOutlined/>, label: "آزمون ها" },
+    { key: "/exams", icon: <BookOutlined />, label: "آزمون ها" },
     {
       key: "/assistant",
       icon: <GoldOutlined />,
@@ -72,13 +70,28 @@ const ProfileLayout: React.FC = () => {
         { key: "/manager/report", label: "گزارش ها" },
       ],
     },
-    { key: "/platform_Manager/manager", icon : <UsergroupAddOutlined/> , label: "مدیران" },
-    { key: "/platform_Manager/consultant", icon : <RedEnvelopeTwoTone/>,  label: "مشاوران" },
-    { key: "/platform_Manager/users", icon : <UsergroupAddOutlined/> ,label: "کاربران" },
-    { key: "/platform_Manager/report", icon : <RadiusUpleftOutlined/> , label: "گزارش ها" },
+    {
+      key: "/platform_Manager/manager",
+      icon: <UsergroupAddOutlined />,
+      label: "مدیران",
+    },
+    {
+      key: "/platform_Manager/consultant",
+      icon: <FundProjectionScreenOutlined />,
+      label: "مشاوران",
+    },
+    {
+      key: "/platform_Manager/users",
+      icon: <UsergroupAddOutlined />,
+      label: "کاربران",
+    },
+    {
+      key: "/platform_Manager/report",
+      icon: <RadiusUpleftOutlined />,
+      label: "گزارش ها",
+    },
     { key: "/setting", icon: <SettingOutlined />, label: "تنظیمات" },
   ];
-
 
   const roleAccess: Record<string, string[]> = {
     normal: [
@@ -92,7 +105,15 @@ const ProfileLayout: React.FC = () => {
       "/exams",
       "/setting",
     ],
-    platform_admin: ["/platform_Manager/users" , "/platform_Manager/report", "/platform_Manager/manager" , "/platform_Manager" , "/platform_Manager/consultant" , "/setting" , "/"],
+    platform_admin: [
+      "/platform_Manager/users",
+      "/platform_Manager/report",
+      "/platform_Manager/manager",
+      "/platform_Manager",
+      "/platform_Manager/consultant",
+      "/setting",
+      "/",
+    ],
     consultant: [
       "/",
       "/assistantpanel/received",
@@ -110,7 +131,6 @@ const ProfileLayout: React.FC = () => {
     ],
   };
 
- 
   const filterMenuByRole = (items: any[], allowed: string[]) => {
     return items
       .map((item) => {
@@ -131,7 +151,7 @@ const ProfileLayout: React.FC = () => {
       .filter(Boolean);
   };
 
-  const role = user?.role ?? "normal"; // fallback
+  const role = user?.role ?? "normal";
   const allowedRoutes = roleAccess[role] || [];
   const filteredMenu = filterMenuByRole(menuItems, allowedRoutes);
 
