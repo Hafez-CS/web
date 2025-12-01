@@ -18,8 +18,10 @@ export default function useAuthInterceptor() {
         if (status === 401) {
           toast.error("نشست شما منقضی شده است. لطفاً دوباره وارد شوید.");
 
-          signOut(); // خروج از لاگین
-          navigate("/login"); // ریدایرکت
+          // خروج از لاگین
+          signOut();
+          // ریدایرکت
+          navigate("/login");
         }
 
         if (status === 500) {

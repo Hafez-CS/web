@@ -27,15 +27,16 @@ import Reports from "./pages/Panel/PlatformManager/Report";
 import ConsultantPanelManager from "./pages/Panel/PlatformManager/Consultant";
 import PlatformAdminManager from "./pages/Panel/PlatformManager/Manager";
 import useAuthHeader from "react-auth-kit/hooks/useAuthHeader";
-
+import ReceptionCompleted from "./pages/Panel/reception/receptionCompleted";
+import RecievedList from "./pages/Panel/Consultant/ReceivedList";
+import CompleteList from "./pages/Panel/Consultant/CompleteList";
+import ReportConsultant from "./pages/Panel/Consultant/Report";
 
 const store = createAuthStore("cookie", {
   authName: "_auth",
   cookieDomain: undefined,
   cookieSecure: window.location.protocol === "https:",
 });
-
-
 
 // const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 //   const isAuthenticated = useIsAuthenticated();
@@ -55,7 +56,8 @@ const App = () => {
     <AuthProvider store={store}>
       <QueryClientProvider client={queryClient}>
         <ConfigProvider
-        locale={faIR} direction="rtl"
+          locale={faIR}
+          direction="rtl"
           theme={{
             algorithm:
               theme === "dark"
@@ -81,26 +83,35 @@ const App = () => {
                 </Route>
                 <Route path="exams" element={<ExamPage />} />
                 <Route path="assistant">
+                  {/* <Route path=":id" element={<Request />} /> */}
                   <Route path="request" element={<Request />} />
                   <Route path="received" element={<Received />} />
-                  <Route path="completed" element={<Reception />} />
+                  <Route path="completed" element={<ReceptionCompleted />} />
                 </Route>
                 <Route path={"assistantpanel"}>
-                  <Route path="time" element={<Consultant/>}/>
-                  <Route path="received" element={<Consultant/>}/>
-                  <Route path="completed" element={<Consultant/>}/>
-                  <Route path="report" element={<Consultant/>}/>
-
+                  <Route path="time" element={<Consultant />} />
+                  <Route path="received" element={<RecievedList />} />
+                  <Route path="completed" element={<CompleteList />} />
+                  <Route path="report" element={<ReportConsultant />} />
                 </Route>
                 <Route path="manager">
-                  <Route path="users" element={<Manager/>} />
-                  <Route path="report" element={<Manager/>} />
+                  <Route path="users" element={<Manager />} />
+                  <Route path="report" element={<Manager />} />
                 </Route>
                 {/* <Route path="platform_Manager"> */}
-                  <Route path="platform_Manager/report" element={<Reports/>} />
-                  <Route path="platform_Manager/users" element={<Platform_Manager/>} />
-                  <Route path="platform_Manager/consultant" element={<ConsultantPanelManager/>}/>
-                  <Route path="platform_Manager/manager" element={<PlatformAdminManager/>}/>
+                <Route path="platform_Manager/report" element={<Reports />} />
+                <Route
+                  path="platform_Manager/users"
+                  element={<Platform_Manager />}
+                />
+                <Route
+                  path="platform_Manager/consultant"
+                  element={<ConsultantPanelManager />}
+                />
+                <Route
+                  path="platform_Manager/manager"
+                  element={<PlatformAdminManager />}
+                />
 
                 {/* </Route> */}
                 <Route path="setting" element={<Setting />} />
@@ -113,7 +124,17 @@ const App = () => {
           </BrowserRouter>
         </ConfigProvider>
       </QueryClientProvider>
-      <ToastContainer position="top-center" />
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        draggable
+        pauseOnHover
+        style={{ fontFamily: "Patrick Hand, cursive , Vazir" }}
+      />
     </AuthProvider>
   );
 };

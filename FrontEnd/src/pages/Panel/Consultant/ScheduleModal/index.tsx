@@ -1,123 +1,123 @@
-import { Modal, TimePicker, Switch } from "antd"
-import DatePicker from "react-multi-date-picker"
-import persian from "react-date-object/calendars/persian"
-import persian_fa from "react-date-object/locales/persian_fa"
-import gregorian from "react-date-object/calendars/gregorian"
+import { Modal, TimePicker, Switch } from "antd";
+import DatePicker from "react-multi-date-picker";
+import persian from "react-date-object/calendars/persian";
+import persian_fa from "react-date-object/locales/persian_fa";
+import gregorian from "react-date-object/calendars/gregorian";
 
-import dayjs from "dayjs"
-import { useState } from "react"
-import type DateObject from "react-date-object"
+import dayjs from "dayjs";
+import { useEffect, useState } from "react";
+import type DateObject from "react-date-object";
 
-import { useMutation } from "@tanstack/react-query"
-import { useAdminConsulation } from "../../../../services/consultations/adminConsultations.service"
-import { toast } from "react-toastify"
-import { queryClient } from "../../../../App"
+export interface IPayload {
+  date: string;
+  start_time: string;
+  end_time: string;
+  is_available: boolean;
+}
 
-interface IPayload {
-  date: string
-  start_time: string
-  end_time: string
-  is_available: boolean
+interface InfoData {
+  date: DateObject | null;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
 }
 
 interface Props {
-  open: boolean
-  onClose: () => void
-  onSubmit?: (data: IPayload) => void
-  type: "package" | "single"
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (data: IPayload) => void;
+
+  mode?: "create" | "edit";
+  InformationData?: InfoData;
 }
 
-const format = "HH:mm"
+const format = "HH:mm";
 
-export default function ScheduleModal({ open, onClose, onSubmit, type }: Props) {
-  const { SetConsultantTime, SetPackageConsultantTime } = useAdminConsulation()
+export default function ScheduleModal({
+  open,
+  onClose,
+  onSubmit,
+  mode = "create",
+  InformationData = {
+    date: null,
+    startTime: "00:00",
+    endTime: "00:00",
+    isActive: false,
+  },
+}: Props) {
+  const [date, setDate] = useState<DateObject | null>(null);
+  const [startTime, setStartTime] = useState(dayjs("00:00", format));
+  const [endTime, setEndTime] = useState(dayjs("00:00", format));
+  const [isActive, setIsActive] = useState(false);
 
-  const [date, setDate] = useState<DateObject | null>(null)
-  const [startTime, setStartTime] = useState(dayjs("00:00", format))
-  const [endTime, setEndTime] = useState(dayjs("00:00", format))
-  const [isActive, setIsActive] = useState(true)
+  useEffect(() => {
+    if (!open) return;
 
-
-  const mutation = useMutation({
-    mutationFn: (data: IPayload) =>
-      type === "single"
-        ? SetConsultantTime(data)
-        : SetPackageConsultantTime(data),
-
-    onSuccess: () => {
-      toast.success("تایم مشاوره با موفقیت ثبت شد")
-      queryClient.invalidateQueries({queryKey : ['ConsulationListData']})
-      onClose()
-    },
-
-    onError: (error : any) => {
-      console.log("🚀 ~ ScheduleModal ~ error:", error)
-      toast.error(error.response.data.non_field_errors[0] || "تیم تکراری" ||"خطا در ثبت تایم مشاوره")
-    },
-  })
+    setDate(InformationData.date ?? null);
+    setStartTime(dayjs(InformationData.startTime ?? "00:00", format));
+    setEndTime(dayjs(InformationData.endTime ?? "00:00", format));
+    setIsActive(InformationData.isActive ?? false);
+  }, [open]);
 
   const handleSubmit = () => {
     if (!date) {
-      toast.error("لطفاً تاریخ را انتخاب کنید")
-      return
+      return void toastFallback("لطفاً تاریخ را انتخاب کنید");
     }
 
-    const miladi = date.convert(gregorian).format("YYYY-MM-DD")
-
     const payload: IPayload = {
-      date: miladi,
+      date: date.convert(gregorian).format("YYYY-MM-DD"),
       start_time: startTime.format(format),
       end_time: endTime.format(format),
       is_available: isActive,
-    }
+    };
 
-   
-    onSubmit?.(payload)
+    onSubmit(payload);
+  };
 
-    
-    mutation.mutate(payload)
+  function toastFallback(msg: string) {
+    try {
+      const { toast } = require("react-toastify");
+      toast.error(msg);
+    } catch {}
   }
 
   return (
     <Modal
-    title={"تعریف تایم"}
+      title={mode === "edit" ? "ویرایش تایم" : "تعریف تایم"}
       open={open}
       onCancel={onClose}
       onOk={handleSubmit}
-      okText="ثبت"
+      okText={mode === "edit" ? "ویرایش" : "ثبت"}
       cancelText="لغو"
-      confirmLoading={mutation.isPending}
       centered
     >
       <div className="flex flex-col gap-4 mt-4" style={{ direction: "rtl" }}>
-
-        <label className="text-sm text-gray-700">انتخاب تاریخ</label>
+        <label>انتخاب تاریخ</label>
         <DatePicker
           value={date}
           onChange={(v) => setDate(v)}
           calendar={persian}
           locale={persian_fa}
-          calendarPosition="bottom-right"
-          className="bg-white shadow-sm rounded-md w-full"
+          className="bg-white w-full"
         />
 
-        <label className="text-sm text-gray-700">ساعت شروع</label>
+        <label>ساعت شروع</label>
         <TimePicker
           value={startTime}
           format={format}
           className="w-full"
-          onChange={(t) => setStartTime(t)}
+          onChange={(v) => v && setStartTime(v)}
         />
 
-        <label className="text-sm text-gray-700">ساعت پایان</label>
+        <label>ساعت پایان</label>
         <TimePicker
           value={endTime}
           format={format}
           className="w-full"
-          onChange={(t) => setEndTime(t)}
+          onChange={(v) => v && setEndTime(v)}
         />
 
-        <label className="text-sm text-gray-700">وضعیت</label>
+        <label>وضعیت</label>
         <Switch
           checked={isActive}
           onChange={setIsActive}
@@ -126,5 +126,5 @@ export default function ScheduleModal({ open, onClose, onSubmit, type }: Props) 
         />
       </div>
     </Modal>
-  )
+  );
 }

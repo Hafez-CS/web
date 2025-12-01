@@ -14,6 +14,13 @@ export interface ICodeInfo {
   used_at: string;
   created_at: string;
 }
+export interface IReserve {
+  consultant_id: number,
+  consultation_type: "single" | "package",
+  scheduled_date: string,
+  scheduled_time: string,
+  discount_code ?: string
+}
 
 export interface IConsultant {
   id: number;
@@ -80,6 +87,48 @@ export const useConsultations = () => {
     );
     return res.data;
   };
+  const complete_consultants = async (
+    id : number
+  ) => {
+    const res = await http.post(
+      `api/consultations/consultations/${id}/complete/`, {} ,
+      { headers: getHeader() }
+    );
+    return res.data;
+  };
+  const Complete_consultants_List = async (
+    
+  ) => {
+    const res = await http.get(
+      `/api/consultations/consultations/completed/`,
+      { headers: getHeader() }
+    );
+    return res.data;
+  };
+  const ReserveTime = async (data : IReserve): Promise<ICode> => {
+    const res = await http.post(
+      `api/consultations/consultations/book/`,
+      data,
+      { headers: getHeader() }
+    );
+    return res.data;
+  };
+  // api/consultations/consultations/statistics/
+  const Report_Consultant = async() => {
+    const res = await http.get(
+      `api/consultations/consultations/statistics/`,
+      { headers: getHeader() }
+    );
+    return res.data;
+  };
+  const Complete_Consultant = async (data : IReserve): Promise<ICode> => {
+    const res = await http.post(
+      `api/consultations/consultations/book/`,
+      data,
+      { headers: getHeader() }
+    );
+    return res.data;
+  };
 
   const exist_consultation = async (): Promise<IReceivedConsultation[]> => {
     const res = await http.get(
@@ -91,7 +140,12 @@ export const useConsultations = () => {
 
   return {
     Request_Free_Coupon,
+    Report_Consultant,
     available_consultants,
+    complete_consultants,
+    Complete_Consultant,
+    Complete_consultants_List,
     exist_consultation,
+    ReserveTime,
   };
 };

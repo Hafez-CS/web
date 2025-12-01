@@ -11,7 +11,7 @@ export const http = axios.create({
 });
 
 http.interceptors.request.use((config) => {
-  const token = Cookies.get("_auth"); // توکن auth-kit
+  const token = Cookies.get("_auth"); 
   if (token) config.headers.Authorization = token;
   return config;
 });

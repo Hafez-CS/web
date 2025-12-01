@@ -7,7 +7,6 @@ export interface sendMessagedto {
 }
 
 export const useChatApi = () => {
-  // گرفتن توکن از react-auth-kit
   const authHeader = useAuthHeader();
 
   const getHeader = () => {
