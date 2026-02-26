@@ -12,9 +12,14 @@
     --color-blackColor : #353535;
     --color-GrayColor : #d9d9d9
 }
+.roomItem{
+  background-color: #3b82f6;
+  color : white
+}
 * {
     font-family:  'Vazir';
     box-sizing: border-box;
+    /* border: 1px solid red; */
     margin: 0;
 }
 .Toasitfy {
@@ -22,7 +27,46 @@
   font-weight: 500;
   font-size: medium;
 }
+/* ===== Modern Adaptive Scrollbar ===== */
 
+/* Chrome / Edge / Safari */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.35); /* neutral slate */
+  border-radius: 999px;
+  transition: background 0.3s ease, opacity 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.8); /* indigo on hover */
+}
+
+/* Dark mode support */
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.9);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.4) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+}
 
 
 
@@ -43,11 +87,11 @@
   height: 40px;
   background-color: white;
   color: #0d4852;
-  padding: 0.5rem; /* معادل p-2 */
+  padding: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-radius: 0.125rem; /* معادل rounded-sm */
+  border-radius: 0.125rem;
   cursor: pointer;
   box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06);
   transition: all 0.2s ease-in-out;
@@ -57,4 +101,20 @@
   background-color: #0d4852;
   color: white;
   transform: scale(1.05);
+}
+.custom-menu .ant-menu-item-selected {
+  background: linear-gradient(90deg, #3b82f6, #6366f1) !important;
+  color: white !important;
+  box-shadow: #3b82f6;
+  border-radius: 10px;
+}
+
+/* Icon inside selected item */
+.custom-menu .ant-menu-item-selected .anticon {
+  color: white !important;
+}
+
+/* Hover effect */
+.custom-menu .ant-menu-item:hover {
+  color: #3b82f6;
 }

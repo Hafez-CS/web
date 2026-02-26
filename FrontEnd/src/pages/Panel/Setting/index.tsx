@@ -5,9 +5,15 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../../context/ThemeContext";
 import { MoonOutlined, SunOutlined } from "@ant-design/icons";
 import useProfileApi from "../../../services/profile/profile.service";
+import useSignOut from "react-auth-kit/hooks/useSignOut";
 
 export default function Setting() {
   const navigate = useNavigate()
+  const signout = useSignOut()
+  const SIGNOUT = () =>{
+    signout()
+    navigate("/login")
+  }
   const {DeleteAccount } = useProfileApi();
     const { theme, toggleTheme } = useTheme();
 
@@ -44,6 +50,9 @@ export default function Setting() {
   <div className="flex flex-row justify-center items-center gap-4">
     <Button onClick={toggleTheme} color="blue" >
     {theme === "dark" ?  <SunOutlined /> : <MoonOutlined/>}
+    </Button>
+    <Button onClick={SIGNOUT} danger >
+      خروج
     </Button>
 
    

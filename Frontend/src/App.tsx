@@ -83,7 +83,10 @@ const App = () => {
                   <Route index element={<AIHelper />} />
                   <Route path=":id" element={<AIHelper />} />
                 </Route>
-                <Route path="exams" element={<ExamPage />} />
+                <Route path="exams" >
+                  <Route path="/exams/lesson" element={<ExamPage />}/>
+                  <Route path="/exams/consultant" element={<ExamPage />}/>
+                </Route>
                 <Route path="assistant">
                   {/* <Route path=":id" element={<Request />} /> */}
                   <Route path="request" element={<Request />} />

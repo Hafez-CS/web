@@ -75,9 +75,10 @@ export default function ScheduleModal({
   };
 
   function toastFallback(msg: string) {
+    console.log("🚀 ~ toastFallback ~ msg:", msg)
     try {
-      const { toast } = require("react-toastify");
-      toast.error(msg);
+      // const { toast } = require("react-toastify");
+      // toast.error(msg);
     } catch {}
   }
 
