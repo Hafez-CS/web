@@ -84,7 +84,12 @@ const ProfileLayout: React.FC = () => {
     {
       key: "/platform_Manager/users",
       icon: <UsergroupAddOutlined />,
-      label: "کاربران",
+      label: "گزارش کاربران",
+    },
+    {
+      key: "/platform_Manager/normalusers",
+      icon: <UsergroupAddOutlined />,
+      label: " کاربران",
     },
     {
       key: "/platform_Manager/report",
@@ -113,6 +118,7 @@ const ProfileLayout: React.FC = () => {
       "/platform_Manager",
       "/platform_Manager/consultant",
       "/setting",
+      "/platform_Manager/normalusers",
       "/",
     ],
     consultant: [
@@ -159,7 +165,7 @@ const ProfileLayout: React.FC = () => {
   const handleMenuClick: MenuProps["onClick"] = (e) => navigate(e.key);
 
   const token = useAuthHeader();
-if (!token) return <Navigate to="/login" replace />;
+  if (!token) return <Navigate to="/login" replace />;
 
   const SIGNOUT = () => {
     signOut();
@@ -194,7 +200,7 @@ if (!token) return <Navigate to="/login" replace />;
           onCollapse={(value) => setCollapsed(value)}
           width={220}
           style={{ background: colorBgContainer, overflowY: "auto" }}
-        >
+        > 
           <div
             style={{
               display: "flex",

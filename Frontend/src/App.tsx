@@ -16,9 +16,9 @@ import Request from "./pages/Panel/reception/receptionRequest";
 import Received from "./pages/Panel/reception/receptionReceived";
 import { useTheme } from "./context/ThemeContext";
 
+
 import "antd/dist/reset.css";
 // import useIsAuthenticated from "react-auth-kit/hooks/useIsAuthenticated";
-import AuthProvider from "react-auth-kit";
 import createAuthStore from "react-auth-kit/store/createAuthStore";
 import Consultant from "./pages/Panel/Consultant";
 import Manager from "./pages/Panel/SchoolManager";
@@ -31,6 +31,8 @@ import ReceptionCompleted from "./pages/Panel/reception/receptionCompleted";
 import RecievedList from "./pages/Panel/Consultant/ReceivedList";
 import CompleteList from "./pages/Panel/Consultant/CompleteList";
 import ReportConsultant from "./pages/Panel/Consultant/Report";
+import SimpleUser from "./pages/Panel/PlatformManager/ShowUsers";
+import AuthProvider from "react-auth-kit";
 
 const store = createAuthStore("cookie", {
   authName: "_auth",
@@ -103,6 +105,10 @@ const App = () => {
                 <Route
                   path="platform_Manager/users"
                   element={<Platform_Manager />}
+                />
+                <Route
+                  path="platform_Manager/normalusers"
+                  element={<SimpleUser />}
                 />
                 <Route
                   path="platform_Manager/consultant"

@@ -89,7 +89,7 @@ export default function ManagerList({ DataSource }: { DataSource: ManagerItem[] 
 
   return (
     <>
-      <Table rowKey="id" columns={columns} dataSource={DataSource} />
+      <Table className='overflow-y-auto' rowKey="id" columns={columns} dataSource={DataSource} />
 
       <Modal
         title="ویرایش اطلاعات مدیر مدرسه"

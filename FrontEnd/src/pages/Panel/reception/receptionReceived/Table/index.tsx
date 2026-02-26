@@ -65,6 +65,7 @@ export default function ReceivedTable({ List }: { List: any }) {
 
     return (
         <Table 
+        className='overflow-y-auto'
             title={() => "مشاوره های دریافت شده"} 
             dataSource={List} 
             columns={columns}

@@ -164,6 +164,7 @@ const modalColumns = [
       >
         <Table
         // style={{}}
+        className='overflow-y-auto'
           dataSource={selectedSlots.map((s) => ({ ...s, key: s.id }))}
           columns={modalColumns}
           pagination={false}

@@ -45,6 +45,6 @@ export default function CompleteList() {
       ];
     
   return (
-   <Table dataSource={completeList} columns={columns}/>
+   <Table className='overflow-y-auto' dataSource={completeList} columns={columns}/>
   )
 }

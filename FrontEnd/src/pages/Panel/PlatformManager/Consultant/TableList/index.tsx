@@ -89,7 +89,7 @@ export default function ConsultantList({ DataSource }: { DataSource: ConsultantI
 
   return (
     <>
-      <Table rowKey="id" columns={columns} dataSource={DataSource} />
+      <Table className='overflow-y-auto' rowKey="id" columns={columns} dataSource={DataSource} />
 
       <Modal
         title="ویرایش مشاور"

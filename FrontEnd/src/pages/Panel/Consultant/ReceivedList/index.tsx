@@ -72,5 +72,5 @@ export default function RecievedList() {
     },
   ];
 
-  return <Table columns={columns} dataSource={list ?? []} rowKey="id" />;
+  return <Table className='overflow-y-auto' columns={columns} dataSource={list ?? []} rowKey="id" />;
 }
